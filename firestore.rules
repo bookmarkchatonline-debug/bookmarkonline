@@ -1,0 +1,45 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Users ─────────────────────────────────────────────────────────────
+    // Public read. Authenticated users can only write their own profile.
+    // Allow create/update so the profile upsert (setDoc merge) always works
+    // right after Firebase Auth account creation (handles token propagation).
+    match /users/{uid} {
+      allow read: if true;
+      allow create: if request.auth != null && request.auth.uid == uid;
+      allow update: if request.auth != null && request.auth.uid == uid;
+      allow delete: if false;
+    }
+
+    // ── Tracks ────────────────────────────────────────────────────────────
+    // Public read. Only authenticated users can create their own tracks.
+    // Owners can update/delete. Anyone authenticated can increment likes.
+    match /tracks/{trackId} {
+      allow read: if true;
+      allow create: if request.auth != null
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 80;
+      allow update: if request.auth != null && (
+        // Owner can update anything
+        resource.data.uid == request.auth.uid
+        // Anyone authenticated can increment/decrement likes only
+        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes'])
+      );
+      allow delete: if request.auth != null && resource.data.uid == request.auth.uid;
+    }
+
+    // ── Likes ─────────────────────────────────────────────────────────────
+    // Public read. Users can only create/delete their own like documents.
+    match /likes/{likeId} {
+      allow read: if true;
+      allow create: if request.auth != null
+        && request.resource.data.uid == request.auth.uid;
+      allow delete: if request.auth != null
+        && resource.data.uid == request.auth.uid;
+    }
+  }
+}
