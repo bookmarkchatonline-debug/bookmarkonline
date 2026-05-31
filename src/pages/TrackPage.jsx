@@ -34,13 +34,16 @@ export default function TrackPage() {
   const showPlaying = isCurrent && isPlaying;
 
   useEffect(() => {
-    setLoading(true);
+    let active = true;
     getTrack(id).then((t) => {
-      setTrack(t);
-      setLoading(false);
-      if (t) play(t);
+      if (active) {
+        setTrack(t);
+        setLoading(false);
+        if (t) play(t);
+      }
     });
-  }, [id]);
+    return () => { active = false; };
+  }, [id, play]);
 
   const handlePlayPause = () => {
     if (isCurrent) togglePlay();

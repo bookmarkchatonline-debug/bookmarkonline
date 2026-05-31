@@ -22,7 +22,16 @@ service cloud.firestore {
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.title is string
         && request.resource.data.title.size() > 0
-        && request.resource.data.title.size() <= 80;
+        && request.resource.data.title.size() <= 80
+        // Enforce free-plan upload limit (2) by reading user's profile
+        && (
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('plan', 'free') != 'free'
+          || (
+            !('stats' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data)
+            || !('uploads' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.stats)
+            || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.stats.uploads < 2
+          )
+        );
       allow update: if request.auth != null && (
         // Owner can update anything
         resource.data.uid == request.auth.uid
@@ -40,6 +49,55 @@ service cloud.firestore {
         && request.resource.data.uid == request.auth.uid;
       allow delete: if request.auth != null
         && resource.data.uid == request.auth.uid;
+    }
+
+    // ── Discovery & Recognition ─────────────────────────────────────────
+    match /liveFeed/{itemId} {
+      allow read: if true;
+      // Allow authenticated users to append live feed items (limited fields)
+      allow create: if request.auth != null
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.message is string
+        && (request.resource.data.trackId is string || !('trackId' in request.resource.data) )
+        && (request.resource.data.type is string || !('type' in request.resource.data));
+      allow delete, update: if false;
+    }
+
+    match /awards/{awardId} {
+      allow read: if true;
+      // Only admins may create awards
+      allow create: if request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      allow update, delete: if false;
+    }
+
+    match /weeklyWinners/{winnerId} {
+      allow read: if true;
+      allow create: if request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      allow update, delete: if false;
+    }
+
+    match /opportunities/{oppId} {
+      allow read: if true;
+      allow create: if request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      allow update, delete: if false;
+    }
+
+    // ── Playlists ─────────────────────────────────────────────────────────
+    match /playlists/{playlistId} {
+      // Public playlists are readable by anyone, private ones only by owner
+      allow read: if resource.data.isPublic == true 
+                  || (request.auth != null && resource.data.uid == request.auth.uid);
+      
+      // Only authenticated users can create playlists, and they must own them
+      allow create: if request.auth != null 
+                    && request.resource.data.uid == request.auth.uid;
+      
+      // Only the owner can update or delete their playlist
+      allow update, delete: if request.auth != null 
+                            && resource.data.uid == request.auth.uid;
     }
   }
 }

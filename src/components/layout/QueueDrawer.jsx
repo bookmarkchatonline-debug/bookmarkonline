@@ -5,6 +5,8 @@ import { usePlayer } from '../../context/PlayerContext';
 export default function QueueDrawer({ isOpen, onClose }) {
   const { queue, currentTrack, removeFromQueue, clearQueue, play } = usePlayer();
 
+  if (!isOpen) return null;
+
   return (
     <>
       {/* Backdrop */}

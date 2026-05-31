@@ -1,22 +1,29 @@
-// src/App.jsx
 import { useState } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import Sidebar from './components/layout/Sidebar';
 import Topbar from './components/layout/Topbar';
 import Player from './components/layout/Player';
+import SettingsModal from './components/layout/SettingsModal';
 import Home from './pages/Home';
 import Discover from './pages/Discover';
 import Rankings from './pages/Rankings';
 import Upload from './pages/Upload';
 import Profile from './pages/Profile';
 import TrackPage from './pages/TrackPage';
+import Feed from './pages/Feed';
+import AwardsPage from './pages/AwardsPage';
+import ArtistDirectory from './pages/ArtistDirectory';
+import OpportunitiesPage from './pages/OpportunitiesPage';
+import UpgradePage from './pages/UpgradePage';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import AdminAwards from './pages/Admin/Awards';
+import AdminOpportunities from './pages/Admin/Opportunities';
 import { useAuth } from './context/AuthContext';
 
 // Pages that use the full app shell (sidebar + topbar + player)
-const SHELL_ROUTES = ['/', '/discover', '/rankings', '/upload', '/profile', '/track'];
+const SHELL_ROUTES = ['/', '/discover', '/rankings', '/upload', '/profile', '/track', '/admin', '/feed', '/awards', '/artists', '/opportunities', '/upgrade'];
 
 function isShellRoute(pathname) {
   if (pathname === '/') return true;
@@ -27,6 +34,7 @@ export default function App() {
   const { loading } = useAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const useShell = isShellRoute(location.pathname);
 
   if (loading) {
@@ -83,6 +91,7 @@ export default function App() {
         <Sidebar
           onClose={() => setSidebarOpen(false)}
           isOpen={sidebarOpen}
+          onOpenSettings={() => setSettingsOpen(true)}
         />
 
         {/* Mobile overlay */}
@@ -104,8 +113,15 @@ export default function App() {
             <Route path="/" element={<Home />} />
             <Route path="/discover" element={<Discover />} />
             <Route path="/rankings" element={<Rankings />} />
+            <Route path="/feed" element={<Feed />} />
+            <Route path="/awards" element={<AwardsPage />} />
+            <Route path="/artists" element={<ArtistDirectory />} />
+            <Route path="/opportunities" element={<OpportunitiesPage />} />
+            <Route path="/upgrade" element={<UpgradePage />} />
             <Route path="/upload" element={<Upload />} />
             <Route path="/profile/:uid" element={<Profile />} />
+            <Route path="/admin/awards" element={<AdminAwards />} />
+            <Route path="/admin/opportunities" element={<AdminOpportunities />} />
             <Route path="/track/:id" element={<TrackPage />} />
             {/* fallback */}
             <Route path="*" element={<Home />} />
@@ -115,6 +131,9 @@ export default function App() {
 
       {/* Sticky player */}
       <Player />
+      
+      {/* Settings Modal */}
+      <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </>
   );
 }

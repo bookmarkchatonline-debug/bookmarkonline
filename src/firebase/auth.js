@@ -41,6 +41,16 @@ export async function registerWithEmail(email, password, username) {
     email,
     avatarUrl: null,
     bio: '',
+    role: 'artist',
+    plan: 'free',
+    creatorLevel: 'Rising Artist',
+    stats: {
+      followers: 0,
+      totalLikes: 0,
+      weeklyLikes: 0,
+      uploads: 0,
+      rankDelta: 0,
+    },
     createdAt: serverTimestamp(),
   });
   return cred.user;
@@ -64,6 +74,16 @@ export async function loginWithGoogle() {
       email: cred.user.email,
       avatarUrl: cred.user.photoURL || null,
       bio: '',
+      role: 'artist',
+      plan: 'free',
+      creatorLevel: 'Rising Artist',
+      stats: {
+        followers: 0,
+        totalLikes: 0,
+        weeklyLikes: 0,
+        uploads: 0,
+        rankDelta: 0,
+      },
       createdAt: serverTimestamp(),
     });
   }

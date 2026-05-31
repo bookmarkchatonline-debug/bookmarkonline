@@ -1,15 +1,16 @@
-// src/components/layout/Player.jsx
 import { usePlayer } from '../../context/PlayerContext';
 import { useAuth } from '../../context/AuthContext';
+import { useSettings } from '../../context/SettingsContext';
 import { toggleLike, hasLiked } from '../../firebase/firestore';
 import {
   Play, Pause, SkipBack, SkipForward,
-  Volume2, VolumeX, Heart, Music, ListMusic,
+  Volume2, VolumeX, Heart, Music, ListMusic, ListPlus
 } from 'lucide-react';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import QueueDrawer from './QueueDrawer';
+import AddToPlaylistModal from '../playlist/AddToPlaylistModal';
 import '../../styles/layout.css';
 
 function formatTime(secs) {
@@ -20,6 +21,7 @@ function formatTime(secs) {
 }
 
 export default function Player() {
+  const { playUiSound } = useSettings();
   const {
     currentTrack, isPlaying, progress, duration, currentTime, volume,
     queue, togglePlay, seek, changeVolume, skipNext, skipPrev,
@@ -28,6 +30,7 @@ export default function Player() {
   const navigate  = useNavigate();
   const [liked,        setLiked]       = useState(false);
   const [queueOpen,    setQueueOpen]   = useState(false);
+  const [playlistOpen, setPlaylistOpen] = useState(false);
   const [muted,        setMuted]       = useState(false);
   const prevVolRef = useRef(0.8);
 
@@ -43,10 +46,11 @@ export default function Player() {
   const handleLike = useCallback(async (e) => {
     e.stopPropagation();
     if (!user) { toast.error('Sign in to like tracks'); return; }
+    playUiSound('pop');
     const newState = await toggleLike(user.uid, currentTrack.id);
     setLiked(newState);
     toast(newState ? '❤️ Liked!' : '💔 Unliked', { duration: 1200 });
-  }, [user, currentTrack]);
+  }, [user, currentTrack, playUiSound]);
 
   const handleProgressClick = (e) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -59,9 +63,11 @@ export default function Player() {
     prevVolRef.current = v;
     setMuted(false);
     changeVolume(v);
+    playUiSound('pop');
   };
 
   const toggleMute = () => {
+    playUiSound('click');
     if (muted) {
       changeVolume(prevVolRef.current || 0.8);
       setMuted(false);
@@ -118,7 +124,7 @@ export default function Player() {
           <div className="player-btns">
             <button
               className="player-btn"
-              onClick={skipPrev}
+              onClick={() => { playUiSound('click'); skipPrev(); }}
               aria-label="Previous"
               title="Previous / Restart"
             >
@@ -126,7 +132,7 @@ export default function Player() {
             </button>
             <button
               className="player-play-btn"
-              onClick={togglePlay}
+              onClick={() => { playUiSound('click'); togglePlay(); }}
               aria-label={isPlaying ? 'Pause' : 'Play'}
               id="player-play-btn"
             >
@@ -134,7 +140,7 @@ export default function Player() {
             </button>
             <button
               className={`player-btn${queue.length === 0 ? ' player-btn-disabled' : ''}`}
-              onClick={skipNext}
+              onClick={() => { playUiSound('click'); skipNext(); }}
               aria-label="Next"
               title={queue.length === 0 ? 'Queue is empty' : 'Skip to next'}
               disabled={queue.length === 0}
@@ -144,7 +150,7 @@ export default function Player() {
           </div>
 
           {/* Progress bar */}
-          <div className="player-progress">
+          <div className="player-progress-wrap">
             <span className="player-time">{formatTime(currentTime)}</span>
             <div
               className="player-progress-bar"
@@ -153,15 +159,32 @@ export default function Player() {
               aria-valuenow={progress}
               aria-valuemin={0}
               aria-valuemax={100}
+              tabIndex={0}
             >
               <div className="player-progress-fill" style={{ width: `${progress}%` }} />
+              <div className="player-progress-thumb" style={{ left: `${progress}%` }} />
             </div>
             <span className="player-time">{formatTime(duration)}</span>
           </div>
         </div>
 
         {/* ── Extras ─────────────────────────────────────────────────────── */}
-        <div className="player-extras">
+        <div className="player-right">
+          {/* Add to Playlist */}
+          <button
+            onClick={() => {
+              playUiSound('click');
+              if (!user) { toast.error('Sign in to add to playlists'); return; }
+              if (!currentTrack) { toast.error('Play a track first'); return; }
+              setPlaylistOpen(true);
+            }}
+            className="btn-icon"
+            aria-label="Add to playlist"
+            title="Add to playlist"
+          >
+            <ListPlus size={18} />
+          </button>
+
           {/* Like */}
           <button
             onClick={handleLike}
@@ -175,7 +198,7 @@ export default function Player() {
           {/* Queue toggle */}
           <button
             className="btn-icon player-queue-btn"
-            onClick={() => setQueueOpen((v) => !v)}
+            onClick={() => { playUiSound('click'); setQueueOpen((v) => !v); }}
             aria-label="Toggle queue"
             title="Queue"
             style={{ position: 'relative', color: queueOpen ? 'var(--accent)' : 'var(--text-secondary)' }}
@@ -196,13 +219,14 @@ export default function Player() {
               {muted || volume === 0 ? <VolumeX size={16} /> : <Volume2 size={16} />}
             </button>
             <div
-              className="player-volume-bar"
+              className="player-vol-bar"
               onClick={handleVolumeClick}
               role="slider"
               aria-label="Volume"
               aria-valuenow={Math.round(displayVol * 100)}
             >
-              <div className="player-volume-fill" style={{ width: `${displayVol * 100}%` }} />
+              <div className="player-vol-fill" style={{ width: `${displayVol * 100}%` }} />
+              <div className="player-vol-thumb" style={{ left: `${displayVol * 100}%` }} />
             </div>
           </div>
         </div>
@@ -210,6 +234,13 @@ export default function Player() {
 
       {/* Queue Drawer */}
       <QueueDrawer isOpen={queueOpen} onClose={() => setQueueOpen(false)} />
+      
+      {/* Playlist Modal */}
+      <AddToPlaylistModal 
+        isOpen={playlistOpen} 
+        onClose={() => setPlaylistOpen(false)} 
+        track={currentTrack} 
+      />
     </>
   );
 }

@@ -1,10 +1,10 @@
 // src/pages/Upload.jsx
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Image, Globe, X, Tag } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { uploadAudio, uploadCoverImage } from '../cloudinary/upload';
-import { addTrack } from '../firebase/firestore';
+import { addTrack, getUserTracks } from '../firebase/firestore';
 import AudioDropzone from '../components/upload/AudioDropzone';
 import toast from 'react-hot-toast';
 import '../styles/pages.css';
@@ -24,17 +24,42 @@ export default function Upload() {
   const [audioProgress, setAudioProgress] = useState(0);
   const [imageProgress, setImageProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
+  const [trackCount, setTrackCount] = useState(0);
+  const [loadingCount, setLoadingCount] = useState(true);
 
-  // Redirect if not logged in
-  if (!user) {
-    navigate('/login');
-    return null;
-  }
+  const isFreePlan = (profile?.plan || 'free') === 'free';
+  const freeUploadLimit = 2;
+  const remainingUploads = isFreePlan ? Math.max(0, freeUploadLimit - trackCount) : null;
+
+  useEffect(() => {
+    if (!user) return () => {};
+    let active = true;
+    getUserTracks(user.uid)
+      .then((tracks) => {
+        if (active) {
+          setTrackCount(tracks.length);
+          setLoadingCount(false);
+        }
+      })
+      .catch(() => {
+        if (active) setLoadingCount(false);
+      });
+    return () => { active = false; };
+  }, [user]);
 
   const handleAudioReady = useCallback((file, dur) => {
     setAudioFile(file);
     setAudioDuration(dur);
   }, []);
+
+  // Redirect if not logged in
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+    }
+  }, [user, navigate]);
+
+  if (!user) return null;
 
   const handleCoverChange = (e) => {
     const f = e.target.files[0];
@@ -65,6 +90,11 @@ export default function Upload() {
     e.preventDefault();
     if (!audioFile) { toast.error('Please select an audio file'); return; }
     if (!title.trim()) { toast.error('Please enter a track title'); return; }
+    // Client-side quota check (works without Cloud Functions)
+    if (isFreePlan && trackCount >= freeUploadLimit) {
+      toast.error('Free plan limit reached. Upgrade to upload more tracks.');
+      return;
+    }
 
     setUploading(true);
     try {
@@ -91,6 +121,7 @@ export default function Upload() {
       });
 
       toast.success('🎵 Snippet published!');
+      setTrackCount((prev) => prev + 1);
       navigate(`/track/${trackId}`);
     } catch (err) {
       toast.error(err.message || 'Upload failed. Please try again.');
@@ -108,6 +139,30 @@ export default function Upload() {
       <div className="upload-hero">
         <h1>Publish Snippet</h1>
         <p>Share your latest sound bites. Upload short audio clips (15–30s) to the BookmarkChat community.</p>
+        <div className="upload-plan-banner">
+          <div>
+            <div className="upload-plan-title">{isFreePlan ? 'Free Artist Plan' : 'Creator Plan'}</div>
+            <div className="upload-plan-sub">
+              {loadingCount
+                ? 'Checking your upload slots...'
+                : isFreePlan
+                ? `${remainingUploads} of ${freeUploadLimit} uploads remaining`
+                : 'Unlimited uploads and creator tools'}
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            {remainingUploads === 0 && (
+              <button type="button" className="btn btn-ghost btn-sm" onClick={() => navigate('/profile')}>
+                View Uploads
+              </button>
+            )}
+            {isFreePlan && (
+              <button type="button" className="btn btn-ghost btn-sm" onClick={() => navigate('/upgrade')}>
+                Upgrade
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit}>

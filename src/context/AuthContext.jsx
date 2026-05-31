@@ -1,70 +1,67 @@
 // src/context/AuthContext.jsx
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, db } from '../firebase/config';
+import { auth } from '../firebase/config';
 import { getUserProfile } from '../firebase/firestore';
-import { upsertUserProfile } from '../firebase/auth';
 
-const AuthContext = createContext(null);
+const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
-  const [user,    setUser]    = useState(null);   // Firebase Auth user
-  const [profile, setProfile] = useState(null);  // Firestore profile doc
+  const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
-      setUser(firebaseUser);
-
-      if (firebaseUser) {
-        let prof = null;
-        try {
-          prof = await getUserProfile(firebaseUser.uid);
-        } catch (err) {
-          console.error('Error fetching user profile in AuthContext:', err);
-        }
-
-        // Auto-create profile if missing (e.g. existing accounts from before rules)
-        if (!prof) {
-          const profileData = {
-            uid: firebaseUser.uid,
-            username:
-              firebaseUser.displayName ||
-              firebaseUser.email?.split('@')[0] ||
-              'Anonymous',
-            email: firebaseUser.email || '',
-            avatarUrl: firebaseUser.photoURL || null,
-            bio: '',
-            createdAt: serverTimestamp(),
-          };
-          try {
-            await upsertUserProfile(firebaseUser.uid, profileData, 3);
-            prof = { ...profileData, createdAt: null }; // local copy (no server timestamp yet)
-          } catch (err) {
-            console.error('Failed to auto-create user profile:', err);
-          }
-        }
-
+  // Load the user profile from Firestore, falling back to a default object if missing
+  const loadProfile = async (currentUser) => {
+    if (!currentUser) {
+      setProfile(null);
+      return;
+    }
+    try {
+      const prof = await getUserProfile(currentUser.uid);
+      if (prof) {
         setProfile(prof);
+      } else {
+        // Fallback for brand new users before profile is fully created
+        setProfile({
+          uid: currentUser.uid,
+          username: currentUser.displayName || currentUser.email?.split('@')[0] || 'Anonymous',
+          email: currentUser.email,
+          avatarUrl: currentUser.photoURL || null,
+          role: 'artist', // Default role
+          plan: 'free',
+          creatorLevel: 'Rising Artist',
+          stats: {
+            followers: 0,
+            following: 0,
+            totalLikes: 0,
+            weeklyLikes: 0,
+            uploads: 0,
+            rankDelta: 0
+          }
+        });
+      }
+    } catch (err) {
+      console.error('Error loading profile:', err);
+    }
+  };
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        await loadProfile(currentUser);
       } else {
         setProfile(null);
       }
-
       setLoading(false);
     });
-    return unsub;
+
+    return () => unsubscribe();
   }, []);
 
   const refreshProfile = async () => {
-    if (user) {
-      try {
-        const prof = await getUserProfile(user.uid);
-        setProfile(prof);
-      } catch (err) {
-        console.error('Error refreshing user profile:', err);
-      }
-    }
+    if (user) await loadProfile(user);
   };
 
   return (
@@ -75,7 +72,5 @@ export function AuthProvider({ children }) {
 }
 
 export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
-  return ctx;
+  return useContext(AuthContext);
 }

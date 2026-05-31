@@ -3,7 +3,9 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   getUserProfile, getUserTracks, getLikedTracks,
-  updateUserProfile,
+  updateUserProfile, getUserBadges,
+  getCreatorLevelProgress, getNextLevel, computeCreatorLevel,
+  getUserPlaylists, getPlaylistTracks,
 } from '../firebase/firestore';
 import { useAuth } from '../context/AuthContext';
 import { usePlayer } from '../context/PlayerContext';
@@ -12,9 +14,13 @@ import { uploadCoverImage } from '../cloudinary/upload';
 import { auth } from '../firebase/config';
 import { updateProfile as authUpdateProfile } from 'firebase/auth';
 import TrackCard from '../components/track/TrackCard';
+import CreatorBadge from '../components/common/CreatorBadge';
+import FollowButton from '../components/common/FollowButton';
+import MomentumArrow from '../components/common/MomentumArrow';
 import {
   Music, Upload, Heart, PlayCircle, Edit3,
   Check, X, BarChart2, Zap, Star, Camera, Settings,
+  Users, TrendingUp, Award, Calendar, Crown, ListMusic,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import '../styles/pages.css';
@@ -65,9 +71,16 @@ export default function Profile() {
   const [profile,      setProfile]      = useState(null);
   const [tracks,       setTracks]       = useState([]);
   const [likedTracks,  setLikedTracks]  = useState([]);
+  const [badges,       setBadges]       = useState([]);
   const [loading,      setLoading]      = useState(true);
   const [likedLoading, setLikedLoading] = useState(false);
   const [tab,          setTab]          = useState('uploads');
+  const [followerCount, setFollowerCount] = useState(0);
+  const [playlists,    setPlaylists]    = useState([]);
+  const [playlistsLoading, setPlaylistsLoading] = useState(false);
+  const [activePlaylistId, setActivePlaylistId] = useState(null);
+  const [activePlaylistTracks, setActivePlaylistTracks] = useState([]);
+  const [activePlaylistLoading, setActivePlaylistLoading] = useState(false);
 
   // Edit profile states
   const [showEditModal, setShowEditModal]     = useState(false);
@@ -96,13 +109,12 @@ export default function Profile() {
 
       if (!active) return;
 
-      // Fallback: If this is the logged-in user, and the firestore doc fetch failed
-      // or returned null, but we have their profile in the AuthContext, use that!
       if (!prof && user?.uid === uid && myProfile) {
         prof = myProfile;
       }
 
       setProfile(prof);
+      setFollowerCount(prof?.stats?.followers || 0);
 
       try {
         const trks = await getUserTracks(uid);
@@ -110,27 +122,29 @@ export default function Profile() {
         setTracks(trks);
       } catch (err) {
         console.error('Error loading user tracks:', err);
-        if (active) {
-          setTracks([]);
-        }
+        if (active) setTracks([]);
       }
 
-      if (active) {
-        setLoading(false);
+      // Load badges
+      try {
+        const b = await getUserBadges(uid);
+        if (!active) return;
+        setBadges(b);
+      } catch (err) {
+        console.warn('Error loading badges:', err);
       }
+
+      if (active) setLoading(false);
     };
 
     loadData();
-
-    return () => {
-      active = false;
-    };
+    return () => { active = false; };
   }, [uid, user, myProfile]);
 
   // ── Load liked tracks lazily ───────────────────────────────────────────────
   const handleTabLiked = useCallback(async () => {
     setTab('liked');
-    if (likedTracks.length > 0) return; // already loaded
+    if (likedTracks.length > 0) return;
     setLikedLoading(true);
     try {
       const liked = await getLikedTracks(uid);
@@ -140,16 +154,62 @@ export default function Profile() {
     }
   }, [uid, likedTracks.length]);
 
-  // ── Avatar Change (Cloudinary Image Upload) ───────────────────────────────
+  // ── Load playlists lazily ───────────────────────────────────────────────
+  const handleTabPlaylists = useCallback(async () => {
+    setTab('playlists');
+    setActivePlaylistId(null);
+    if (playlists.length > 0) return;
+    setPlaylistsLoading(true);
+    try {
+      const p = await getUserPlaylists(uid);
+      setPlaylists(p);
+    } finally {
+      setPlaylistsLoading(false);
+    }
+  }, [uid, playlists.length]);
+
+  const handlePlayPlaylist = async (playlistId) => {
+    try {
+      const t = await getPlaylistTracks(playlistId);
+      if (t.length > 0) playQueue(t, 0);
+      else toast.error('Playlist is empty');
+    } catch(err) {
+      toast.error('Failed to play playlist');
+    }
+  };
+
+  const handleTogglePlaylist = async (playlistId) => {
+    if (activePlaylistId === playlistId) {
+      setActivePlaylistId(null);
+      return;
+    }
+    setActivePlaylistId(playlistId);
+    setActivePlaylistTracks([]);
+    setActivePlaylistLoading(true);
+    try {
+      const t = await getPlaylistTracks(playlistId);
+      setActivePlaylistTracks(t);
+    } catch (err) {
+      toast.error('Failed to load playlist tracks');
+    } finally {
+      setActivePlaylistLoading(false);
+    }
+  };
+
+  const handleTrackDeleted = (deletedId) => {
+    setTracks((prev) => prev.filter((t) => t.id !== deletedId));
+    setLikedTracks((prev) => prev.filter((t) => t.id !== deletedId));
+    if (isOwn) refreshProfile();
+  };
+
+  // ── Avatar Change ───────────────────────────────────────────────────────
   const handleAvatarChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
     if (file.size > 5 * 1024 * 1024) {
       toast.error('Image size must be less than 5MB');
       return;
     }
-
     setUploadingAvatar(true);
     try {
       const res = await uploadCoverImage(file);
@@ -163,7 +223,7 @@ export default function Profile() {
     }
   };
 
-  // ── Save Full Profile Customizations ──────────────────────────────────────
+  // ── Save Full Profile ──────────────────────────────────────────────────
   const handleSaveProfile = async (e) => {
     e.preventDefault();
     if (!editUsername.trim()) {
@@ -172,31 +232,20 @@ export default function Profile() {
     }
     setSavingProfile(true);
     try {
-      // 1. Update Firebase Auth Profile
       if (auth.currentUser) {
         await authUpdateProfile(auth.currentUser, {
           displayName: editUsername.trim(),
           photoURL: editAvatarUrl || null,
         });
       }
-
-      // 2. Update Firestore Doc (this will automatically cascade to all tracks too!)
       const updatedFields = {
         username: editUsername.trim(),
         bio: editBio.trim(),
         avatarUrl: editAvatarUrl || null,
       };
       await updateUserProfile(uid, updatedFields);
-
-      // 3. Update local state
-      setProfile((p) => ({
-        ...p,
-        ...updatedFields,
-      }));
-
-      // 4. Refresh global AuthContext
+      setProfile((p) => ({ ...p, ...updatedFields }));
       await refreshProfile();
-
       toast.success('Profile saved successfully!');
       setShowEditModal(false);
     } catch (err) {
@@ -220,6 +269,14 @@ export default function Profile() {
     (profile?.username || myProfile?.username || '?')
       .slice(0, 2)
       .toUpperCase();
+
+  const levelProgress = getCreatorLevelProgress(profile?.stats);
+  const nextLevel = getNextLevel(profile?.stats);
+  const currentLevel = profile?.creatorLevel || computeCreatorLevel(profile?.stats);
+
+  const memberSince = profile?.createdAt?.seconds
+    ? new Date(profile.createdAt.seconds * 1000).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+    : null;
 
   // ── Loading skeleton ──────────────────────────────────────────────────────
   if (loading) {
@@ -269,6 +326,17 @@ export default function Profile() {
                     email: user.email || '',
                     avatarUrl: user.photoURL || null,
                     bio: '',
+                    role: 'artist',
+                    plan: 'free',
+                    creatorLevel: 'Rising Artist',
+                    stats: {
+                      followers: 0,
+                      following: 0,
+                      totalLikes: 0,
+                      weeklyLikes: 0,
+                      uploads: 0,
+                      rankDelta: 0,
+                    },
                     createdAt: new Date(),
                   };
                   await upsertUserProfile(user.uid, profileData, 3);
@@ -319,7 +387,6 @@ export default function Profile() {
           ) : (
             <div className="profile-avatar-initials">{initials}</div>
           )}
-          {/* Online / playing indicator */}
           <span className="profile-avatar-dot" aria-hidden="true" />
         </div>
 
@@ -327,13 +394,13 @@ export default function Profile() {
         <div className="profile-identity">
           <div className="profile-username-row">
             <h1 className="profile-display-name">{profile.username}</h1>
-            {tracks.length > 0 && (
-              <span className="profile-verified-badge" title="Active creator">⭐</span>
+            <CreatorBadge level={currentLevel} size="md" />
+            {badges.length > 0 && (
+              <span className="profile-verified-badge" title="Award Winner">🏆</span>
             )}
           </div>
           <div className="profile-handle">@{profile.username.toLowerCase().replace(/\s+/g, '_')}</div>
 
-          {/* Bio — editable for owner */}
           <div className="profile-bio-row">
             <p className="profile-bio-text">
               {profile.bio || (isOwn ? 'Add a bio to tell people about yourself…' : 'No bio yet.')}
@@ -353,6 +420,13 @@ export default function Profile() {
               </button>
             )}
           </div>
+
+          {memberSince && (
+            <div className="profile-member-since">
+              <Calendar size={12} />
+              Member since {memberSince}
+            </div>
+          )}
         </div>
 
         {/* Actions */}
@@ -382,17 +456,41 @@ export default function Profile() {
               </button>
             </div>
           ) : (
-            tracks.length > 0 && (
-              <button
-                className="btn btn-primary"
-                onClick={() => playQueue(tracks, 0)}
-                id="profile-play-all-btn"
-              >
-                <PlayCircle size={15} />
-                Play All
-              </button>
-            )
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+              <FollowButton
+                targetUid={uid}
+                onFollowChange={(delta) => setFollowerCount((c) => Math.max(0, c + delta))}
+              />
+              {tracks.length > 0 && (
+                <button
+                  className="btn btn-ghost"
+                  onClick={() => playQueue(tracks, 0)}
+                  id="profile-play-all-btn"
+                >
+                  <PlayCircle size={15} />
+                  Play All
+                </button>
+              )}
+            </div>
           )}
+        </div>
+      </div>
+
+      {/* ── Creator Level Progress ────────────────────────────────────────── */}
+      <div className="profile-level-section">
+        <div className="profile-level-header">
+          <div className="profile-level-current">
+            <Crown size={14} color="var(--accent)" />
+            <span>{currentLevel}</span>
+          </div>
+          {nextLevel && (
+            <div className="profile-level-next">
+              Next: <strong>{nextLevel.name}</strong> ({nextLevel.minLikes} likes)
+            </div>
+          )}
+        </div>
+        <div className="profile-level-bar">
+          <div className="profile-level-fill" style={{ width: `${levelProgress}%` }} />
         </div>
       </div>
 
@@ -411,18 +509,36 @@ export default function Profile() {
           color="linear-gradient(135deg, #ec4899, #f43f5e)"
         />
         <StatCard
-          value={topTrack?.likes || 0}
-          label="Best Track"
-          icon={Star}
-          color="linear-gradient(135deg, #f59e0b, #ef4444)"
+          value={followerCount}
+          label="Followers"
+          icon={Users}
+          color="linear-gradient(135deg, #3b82f6, #06b6d4)"
         />
         <StatCard
-          value={tracks.filter((t) => (t.likes || 0) > 0).length}
-          label="Liked By Others"
-          icon={BarChart2}
-          color="linear-gradient(135deg, #06b6d4, #3b82f6)"
+          value={profile.stats?.following || 0}
+          label="Following"
+          icon={TrendingUp}
+          color="linear-gradient(135deg, #22c55e, #10b981)"
         />
       </div>
+
+      {/* ── Badges ──────────────────────────────────────────────────────── */}
+      {badges.length > 0 && (
+        <div className="profile-badges-section">
+          <div className="profile-badges-title">
+            <Award size={14} color="var(--accent)" />
+            Badges & Awards
+          </div>
+          <div className="profile-badges-grid">
+            {badges.map((badge) => (
+              <div key={badge.id} className="profile-badge-card">
+                <div className="profile-badge-icon">🏆</div>
+                <div className="profile-badge-name">{badge.title || badge.category}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── Top Track Highlight ──────────────────────────────────────────── */}
       {topTrack && topTrack.likes > 0 && (
@@ -463,14 +579,16 @@ export default function Profile() {
         <Tab active={tab === 'popular'} onClick={() => setTab('popular')}>
           Most Liked
         </Tab>
+        <Tab active={tab === 'playlists'} onClick={handleTabPlaylists}>
+          Playlists
+        </Tab>
         {isOwn && (
           <Tab active={tab === 'liked'} onClick={handleTabLiked} count={likedTracks.length || undefined}>
             Liked
           </Tab>
         )}
 
-        {/* Play all visible tracks */}
-        {tab !== 'liked' && tracks.length > 0 && (
+        {tab !== 'liked' && tab !== 'playlists' && tracks.length > 0 && (
           <button
             className="play-all-btn"
             onClick={() => playQueue(displayedTracks, 0)}
@@ -484,7 +602,64 @@ export default function Profile() {
       </div>
 
       {/* ── Track List ──────────────────────────────────────────────────── */}
-      {tab === 'liked' ? (
+      {tab === 'playlists' ? (
+        playlistsLoading ? (
+          <div className="tracks-grid">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} style={{ height: 72, background: 'var(--bg-card)', borderRadius: 'var(--radius-md)', opacity: 1 - i * 0.2 }} />
+            ))}
+          </div>
+        ) : playlists.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-state-icon"><ListMusic size={40} opacity={0.3} /></div>
+            <p>{isOwn ? "You haven't created any playlists yet." : "No public playlists."}</p>
+          </div>
+        ) : (
+          <div className="tracks-grid">
+            {playlists.filter(p => isOwn || p.isPublic).map((pl) => (
+              <div key={pl.id} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div 
+                  className="track-card" 
+                  style={{ padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
+                  onClick={() => handleTogglePlaylist(pl.id)}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div style={{ width: '48px', height: '48px', background: 'var(--bg-elevated)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Music size={24} color="var(--text-muted)" />
+                    </div>
+                    <div>
+                      <h3 style={{ fontSize: '1rem', fontWeight: 600, margin: 0 }}>{pl.name}</h3>
+                      <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', margin: 0 }}>
+                        {pl.tracks?.length || 0} tracks
+                      </p>
+                    </div>
+                  </div>
+                  <button 
+                    className="btn-icon" 
+                    onClick={(e) => { e.stopPropagation(); handlePlayPlaylist(pl.id); }}
+                    style={{ color: 'var(--accent)' }}
+                  >
+                    <PlayCircle size={24} />
+                  </button>
+                </div>
+                {activePlaylistId === pl.id && (
+                  <div style={{ paddingLeft: '32px', display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '8px' }}>
+                    {activePlaylistLoading ? (
+                      <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Loading tracks...</div>
+                    ) : activePlaylistTracks.length === 0 ? (
+                      <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>No tracks in this playlist</div>
+                    ) : (
+                      activePlaylistTracks.map(track => (
+                        <TrackCard key={track.id} track={track} onTrackDeleted={handleTrackDeleted} />
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )
+      ) : tab === 'liked' ? (
         likedLoading ? (
           <div className="tracks-grid">
             {Array.from({ length: 4 }).map((_, i) => (
@@ -502,7 +677,7 @@ export default function Profile() {
         ) : (
           <div className="tracks-grid">
             {likedTracks.map((track) => (
-              <TrackCard key={track.id} track={track} />
+              <TrackCard key={track.id} track={track} onTrackDeleted={handleTrackDeleted} />
             ))}
           </div>
         )
@@ -519,7 +694,7 @@ export default function Profile() {
       ) : (
         <div className="tracks-grid">
           {displayedTracks.map((track) => (
-            <TrackCard key={track.id} track={track} />
+            <TrackCard key={track.id} track={track} onTrackDeleted={handleTrackDeleted} />
           ))}
         </div>
       )}
@@ -536,7 +711,6 @@ export default function Profile() {
             </div>
 
             <form onSubmit={handleSaveProfile} className="modal-form">
-              {/* Avatar Upload Container */}
               <div className="edit-avatar-container">
                 <div className="edit-avatar-wrapper" onClick={() => document.getElementById('avatar-file-input').click()}>
                   {editAvatarUrl ? (
@@ -544,12 +718,10 @@ export default function Profile() {
                   ) : (
                     <div className="edit-avatar-placeholder">{initials}</div>
                   )}
-                  
                   <div className="edit-avatar-overlay">
                     <Camera size={18} />
                     <span className="edit-avatar-label">Change</span>
                   </div>
-
                   {uploadingAvatar && (
                     <div className="edit-avatar-spinner">
                       <div className="spinner" style={{ width: 20, height: 20, borderWidth: 2 }} />
@@ -567,7 +739,6 @@ export default function Profile() {
                 />
               </div>
 
-              {/* Username Input */}
               <div className="input-group">
                 <label className="input-label" htmlFor="edit-username-input">Username *</label>
                 <input
@@ -582,7 +753,6 @@ export default function Profile() {
                 />
               </div>
 
-              {/* Bio Textarea */}
               <div className="input-group">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <label className="input-label" htmlFor="edit-bio-input">Bio</label>
@@ -600,7 +770,6 @@ export default function Profile() {
                 />
               </div>
 
-              {/* Actions */}
               <div className="modal-actions">
                 <button
                   type="button"

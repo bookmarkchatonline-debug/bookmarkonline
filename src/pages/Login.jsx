@@ -40,63 +40,74 @@ export default function Login() {
   };
 
   return (
-    <div className="auth-page">
+    <div className="auth-container">
       <div className="auth-bg-orb auth-bg-orb-1" />
       <div className="auth-bg-orb auth-bg-orb-2" />
 
       <div className="auth-card">
-        <div className="auth-logo">
-          <div className="auth-logo-mark">BOOKMARK<span>CHAT</span></div>
-          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 4 }}>
-            Discover. Save. Rank.
+        <div className="auth-header">
+          <div className="auth-logo">
+            BOOKMARK<span>CHAT</span>
           </div>
+          <h1 className="auth-title">Welcome back</h1>
+          <p className="auth-subtitle">Sign in to discover and share music</p>
         </div>
 
-        <h1 className="auth-title">Welcome back</h1>
-        <p className="auth-subtitle">Sign in to discover and share music</p>
-
-        <form className="auth-form" onSubmit={handleSubmit} id="login-form">
+        <form onSubmit={handleSubmit} className="auth-form" id="login-form">
           {error && <div className="auth-error">{error}</div>}
 
           <div className="input-group">
             <label className="input-label" htmlFor="login-email">Email</label>
-            <input
-              id="login-email"
-              type="email"
-              className="input"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="email"
-            />
+            <div className="input-wrapper">
+              <svg className="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              <input
+                id="login-email"
+                type="email"
+                className="input input-with-icon"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete="email"
+              />
+            </div>
           </div>
 
           <div className="input-group">
             <label className="input-label" htmlFor="login-password">Password</label>
-            <input
-              id="login-password"
-              type="password"
-              className="input"
-              placeholder="Your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete="current-password"
-            />
+            <div className="input-wrapper">
+              <svg className="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <input
+                id="login-password"
+                type="password"
+                className="input input-with-icon"
+                placeholder="Your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+              />
+            </div>
           </div>
 
           <button
             type="submit"
-            className="btn btn-primary btn-block btn-lg"
+            className="btn btn-primary btn-block"
             disabled={loading}
             id="login-submit-btn"
+            style={{ marginTop: '10px' }}
           >
-            {loading ? 'Signing in...' : 'Sign In'}
+            {loading ? (
+              <div className="spinner" style={{ width: 20, height: 20, borderWidth: 2 }} />
+            ) : (
+              'Sign In'
+            )}
           </button>
         </form>
 
-        <div className="divider-text" style={{ margin: '20px 0' }}>or continue with</div>
+        <div className="auth-divider">
+          <span>OR CONTINUE WITH</span>
+        </div>
 
         <button className="google-btn" onClick={handleGoogle} disabled={loading} id="google-login-btn">
           <svg className="google-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -108,9 +119,9 @@ export default function Login() {
           Continue with Google
         </button>
 
-        <p className="auth-footer">
+        <div className="auth-footer">
           Don't have an account? <Link to="/register">Join free</Link>
-        </p>
+        </div>
       </div>
     </div>
   );
