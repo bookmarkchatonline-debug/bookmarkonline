@@ -6,6 +6,7 @@ import Topbar from './components/layout/Topbar';
 import Player from './components/layout/Player';
 import SettingsModal from './components/layout/SettingsModal';
 import Home from './pages/Home';
+import Landing from './pages/Landing';
 import Discover from './pages/Discover';
 import Rankings from './pages/Rankings';
 import Upload from './pages/Upload';
@@ -25,18 +26,19 @@ import { useAuth } from './context/AuthContext';
 // Pages that use the full app shell (sidebar + topbar + player)
 const SHELL_ROUTES = ['/', '/discover', '/rankings', '/upload', '/profile', '/track', '/admin', '/feed', '/awards', '/artists', '/opportunities', '/upgrade'];
 
-function isShellRoute(pathname) {
-  if (pathname === '/') return true;
+function isShellRoute(pathname, isLoggedIn) {
+  if (pathname === '/') return isLoggedIn; // landing doesn't use shell
   return SHELL_ROUTES.some((r) => r !== '/' && pathname.startsWith(r));
 }
 
 export default function App() {
-  const { loading } = useAuth();
+  const { loading, user } = useAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const useShell = isShellRoute(location.pathname);
+  const useShell = isShellRoute(location.pathname, !!user);
 
+  // Show spinner while Firebase auth is resolving
   if (loading) {
     return (
       <div className="loading-screen">
@@ -48,6 +50,7 @@ export default function App() {
     );
   }
 
+  // Non-authenticated / non-shell routes — render without app chrome
   if (!useShell) {
     return (
       <>
@@ -64,12 +67,15 @@ export default function App() {
           }}
         />
         <Routes>
+          <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="*" element={<Landing />} />
         </Routes>
       </>
     );
   }
+
 
   return (
     <>
@@ -110,7 +116,7 @@ export default function App() {
           <Topbar onMenuToggle={() => setSidebarOpen((v) => !v)} />
 
           <Routes>
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={user ? <Home /> : <Landing />} />
             <Route path="/discover" element={<Discover />} />
             <Route path="/rankings" element={<Rankings />} />
             <Route path="/feed" element={<Feed />} />

@@ -1,7 +1,7 @@
 // src/pages/Home.jsx
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PlayCircle, Trophy, Users, Zap, TrendingUp, Music, ArrowRight, Flame } from 'lucide-react';
+import { PlayCircle, Trophy, Users, Zap, TrendingUp, Music, ArrowRight, Flame, Shield, Radio } from 'lucide-react';
 import { getTopTracks, getNewestTracks, getTopCreators, getLiveFeed, getLatestAward } from '../firebase/firestore';
 import { getPlatformStats } from '../firebase/stats';
 import { useAuth } from '../context/AuthContext';
@@ -83,6 +83,30 @@ export default function Home() {
               {platformStats.onlineNow.toLocaleString()}
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* ─── Why Artists Join ─────────────────────────────────── */}
+      <section className="home-why-section">
+        <div className="home-why-header">
+          <div className="home-why-eyebrow">Why Artists Join BookmarkChat</div>
+        </div>
+        <div className="home-why-grid">
+          {[
+            { Icon: Shield,     color: '#a855f7', title: 'Keep 100% Ownership',         desc: 'Your music, your rights. Always.' },
+            { Icon: TrendingUp, color: '#22c55e', title: 'Get Discovered Through Rankings', desc: 'Rankings and Fresh Streams give everyone a real chance.' },
+            { Icon: Trophy,     color: '#facc15', title: 'Win Gold Tape Awards',         desc: 'Monthly awards. Real recognition. Real opportunities.' },
+            { Icon: Users,      color: '#3b82f6', title: 'Build a Real Fanbase',         desc: 'Connect with listeners who truly support your art.' },
+            { Icon: Radio,      color: '#f43f5e', title: 'No Label Required',            desc: 'No labels, no managers. Just talent and opportunity.' },
+          ].map(({ Icon, color, title, desc }, i) => (
+            <div key={i} className="home-why-card" style={{ '--why-color': color }}>
+              <div className="home-why-icon" style={{ background: `${color}1a`, color }}>
+                <Icon size={20} />
+              </div>
+              <div className="home-why-title">{title}</div>
+              <div className="home-why-desc">{desc}</div>
+            </div>
+          ))}
         </div>
       </section>
 
