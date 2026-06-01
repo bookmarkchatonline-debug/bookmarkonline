@@ -1,7 +1,7 @@
 // src/pages/Register.jsx
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Mail, Lock, User, ArrowRight } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight, ArrowLeft } from 'lucide-react';
 import { registerWithEmail as register, loginWithGoogle } from '../firebase/auth';
 import toast from 'react-hot-toast';
 
@@ -52,6 +52,9 @@ export default function Register() {
 
   return (
     <div className="auth-container">
+      <button className="auth-back-btn" onClick={() => navigate('/')}>
+        <ArrowLeft size={16} /> Back to Home
+      </button>
       <div className="auth-card">
         <div className="auth-header">
           <div className="auth-logo">

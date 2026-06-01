@@ -144,7 +144,7 @@ export default function Landing() {
             </div>
             <div className="landing-hero-social-proof">
               <div className="sp-avatars">
-                {['K','R','V','L','T'].map((l, i) => (
+                {['K', 'R', 'V', 'L', 'T'].map((l, i) => (
                   <div key={i} className="sp-avatar" style={{ left: i * 22 }}>
                     {l}
                   </div>
@@ -156,21 +156,12 @@ export default function Landing() {
 
           <div className="landing-hero-visual">
             <div className="hero-img-frame">
-              <img src="/hero-illustration.png" alt="Artist on stage" className="hero-illustration" />
+              <img src="/hero.png" alt="Artist on stage" className="hero-illustration" />
               <div className="hero-img-overlay" />
               {/* Floating cards */}
-              <div className="floating-card fc-top-right">
-                <Trophy size={14} color="#facc15" />
-                <span>Gold Tape Awards</span>
-              </div>
-              <div className="floating-card fc-bottom-left">
-                <div className="live-pulse" />
-                <span>Live Rankings</span>
-              </div>
-              <div className="floating-card fc-mid-left">
-                <TrendingUp size={13} color="#22c55e" />
-                <span className="fc-green">+12.4K this week</span>
-              </div>
+
+
+
             </div>
           </div>
         </div>
