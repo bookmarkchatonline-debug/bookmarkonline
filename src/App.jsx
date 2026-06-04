@@ -23,15 +23,16 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import AdminAwards from './pages/Admin/Awards';
 import AdminOpportunities from './pages/Admin/Opportunities';
+import History from './pages/History';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
 import About from './pages/About';
 import { useAuth } from './context/AuthContext';
 
 // Pages that use the full app shell (sidebar + topbar + player)
-const SHELL_ROUTES = ['/', '/discover', '/rankings', '/upload', '/profile', '/track', '/admin', '/feed', '/community', '/awards', '/artists', '/opportunities', '/upgrade'];
+const SHELL_ROUTES = ['/', '/discover', '/rankings', '/upload', '/profile', '/track', '/admin', '/feed', '/community', '/awards', '/artists', '/opportunities', '/upgrade', '/history'];
 
-const SHELL_ROUTES = ['/', '/discover', '/rankings', '/upload', '/profile', '/track', '/admin', '/feed', '/community', '/awards', '/artists', '/opportunities', '/upgrade'];
+
 const NON_SHELL_ROUTES = ['/login', '/register', '/privacy', '/terms', '/about'];
 
 function isShellRoute(pathname, isLoggedIn) {
@@ -139,6 +140,7 @@ export default function App() {
             <Route path="/opportunities" element={<OpportunitiesPage />} />
             <Route path="/upgrade" element={<UpgradePage />} />
             <Route path="/upload" element={<Upload />} />
+            <Route path="/history" element={<History />} />
             <Route path="/profile/:uid" element={<Profile />} />
             <Route path="/admin/awards" element={<AdminAwards />} />
             <Route path="/admin/opportunities" element={<AdminOpportunities />} />

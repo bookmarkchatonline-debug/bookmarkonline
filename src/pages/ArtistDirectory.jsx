@@ -32,10 +32,15 @@ export default function ArtistDirectory() {
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    getAllArtists(100).then((data) => {
-      setArtists(data);
-      setLoading(false);
-    });
+    getAllArtists(100)
+      .then((data) => {
+        setArtists(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error('Failed to load artists:', err);
+        setLoading(false);
+      });
   }, []);
 
   const filtered = artists

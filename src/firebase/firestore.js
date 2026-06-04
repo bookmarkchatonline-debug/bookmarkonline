@@ -521,7 +521,6 @@ export async function getAllArtists(limitCount = 50) {
   const q = query(
     collection(db, 'users'),
     where('role', '==', 'artist'),
-    orderBy('stats.totalLikes', 'desc'),
     limit(limitCount)
   );
   const snap = await getDocs(q);

@@ -44,6 +44,15 @@ export function PlayerProvider({ children }) {
     setIsPlaying(true);
     setProgress(0);
     setCurrentTime(0);
+    
+    // Save to local storage for History page
+    try {
+      const stored = JSON.parse(localStorage.getItem('bookmarkchat_listen_history') || '[]');
+      const filtered = stored.filter(t => t.id !== track.id);
+      filtered.unshift(track);
+      localStorage.setItem('bookmarkchat_listen_history', JSON.stringify(filtered.slice(0, 50)));
+    } catch (err) {}
+
     attachListeners(audio, track, queueSnap, historySnap);
   }, [attachListeners]);
 

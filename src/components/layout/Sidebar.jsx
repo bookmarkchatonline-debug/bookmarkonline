@@ -1,7 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   Home, Compass, BarChart2, Upload, User, Music, X, Star, Calendar,
-  MessageCircle, Trophy, Users, Zap, Crown, Settings, MessageSquare
+  MessageCircle, Trophy, Users, Zap, Crown, Settings, MessageSquare, Clock
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import CreatorBadge from '../common/CreatorBadge';
@@ -62,6 +62,13 @@ export default function Sidebar({ onClose, isOpen, onOpenSettings }) {
                   <CreatorBadge level={profile.creatorLevel} size="sm" showIcon={false} />
                 </span>
               )}
+            </NavLink>
+            <NavLink
+              to="/history"
+              className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+            >
+              <Clock className="nav-icon" size={18} />
+              Listen History
             </NavLink>
             <NavLink
               to="/upload"
