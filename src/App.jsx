@@ -23,12 +23,19 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import AdminAwards from './pages/Admin/Awards';
 import AdminOpportunities from './pages/Admin/Opportunities';
+import Privacy from './pages/Privacy';
+import Terms from './pages/Terms';
+import About from './pages/About';
 import { useAuth } from './context/AuthContext';
 
 // Pages that use the full app shell (sidebar + topbar + player)
 const SHELL_ROUTES = ['/', '/discover', '/rankings', '/upload', '/profile', '/track', '/admin', '/feed', '/community', '/awards', '/artists', '/opportunities', '/upgrade'];
 
+const SHELL_ROUTES = ['/', '/discover', '/rankings', '/upload', '/profile', '/track', '/admin', '/feed', '/community', '/awards', '/artists', '/opportunities', '/upgrade'];
+const NON_SHELL_ROUTES = ['/login', '/register', '/privacy', '/terms', '/about'];
+
 function isShellRoute(pathname, isLoggedIn) {
+  if (NON_SHELL_ROUTES.includes(pathname)) return false;
   if (pathname === '/') return isLoggedIn; // landing doesn't use shell
   return SHELL_ROUTES.some((r) => r !== '/' && pathname.startsWith(r));
 }
@@ -72,6 +79,9 @@ export default function App() {
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/about" element={<About />} />
           <Route path="*" element={<Landing />} />
         </Routes>
       </>

@@ -1,5 +1,5 @@
 // src/pages/Landing.jsx
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useEffect, useState, useRef } from 'react';
 import {
   Music, Trophy, TrendingUp, Zap, ArrowRight,
@@ -507,10 +507,10 @@ export default function Landing() {
           <div className="footer-links-grid" style={{ 
             display: 'flex', gap: '30px', margin: '20px 0', flexWrap: 'wrap', justifyContent: 'center' 
           }}>
-            <a href="#" className="footer-link">About</a>
+            <Link to="/about" className="footer-link">About</Link>
             <a href="mailto:Bookmarkchat.online@gmail.com" className="footer-link">Bookmarkchat.online@gmail.com</a>
-            <a href="#" className="footer-link">Privacy Policy</a>
-            <a href="#" className="footer-link">Terms</a>
+            <Link to="/privacy" className="footer-link">Privacy Policy</Link>
+            <Link to="/terms" className="footer-link">Terms</Link>
             <a href="https://www.instagram.com/bookmarkchat.online?igsh=NTc4MTIwNjQ2YQ%3D%3D&utm_source=qr" target="_blank" rel="noopener noreferrer" className="footer-link">Instagram</a>
             <a href="https://www.tiktok.com/@bookmarkchat.online?_r=1&_t=ZP-96vCelDNyCE" target="_blank" rel="noopener noreferrer" className="footer-link">TikTok</a>
           </div>
