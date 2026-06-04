@@ -23,6 +23,10 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import AdminAwards from './pages/Admin/Awards';
 import AdminOpportunities from './pages/Admin/Opportunities';
+import AdminUsers from './pages/Admin/Users';
+import AdminDashboard from './pages/Admin/Dashboard';
+import AdminTracks from './pages/Admin/Tracks';
+import AdminGuard from './components/layout/AdminGuard';
 import History from './pages/History';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
@@ -142,8 +146,11 @@ export default function App() {
             <Route path="/upload" element={<Upload />} />
             <Route path="/history" element={<History />} />
             <Route path="/profile/:uid" element={<Profile />} />
-            <Route path="/admin/awards" element={<AdminAwards />} />
-            <Route path="/admin/opportunities" element={<AdminOpportunities />} />
+            <Route path="/admin/dashboard" element={<AdminGuard><AdminDashboard /></AdminGuard>} />
+            <Route path="/admin/awards" element={<AdminGuard><AdminAwards /></AdminGuard>} />
+            <Route path="/admin/opportunities" element={<AdminGuard><AdminOpportunities /></AdminGuard>} />
+            <Route path="/admin/users" element={<AdminGuard><AdminUsers /></AdminGuard>} />
+            <Route path="/admin/tracks" element={<AdminGuard><AdminTracks /></AdminGuard>} />
             <Route path="/track/:id" element={<TrackPage />} />
             {/* fallback */}
             <Route path="*" element={<Home />} />

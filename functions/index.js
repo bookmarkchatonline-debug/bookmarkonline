@@ -10,6 +10,7 @@ async function emitLiveFeed(item) {
   await docRef.set({ ...item, createdAt: admin.firestore.FieldValue.serverTimestamp() });
 }
 
+/*
 // On track create: increment owner's upload count and emit feed
 exports.onTrackCreate = functions.firestore
   .document('tracks/{trackId}')
@@ -90,6 +91,7 @@ exports.onLikeDelete = functions.firestore
 
     return null;
   });
+*/
 
 // Callable: validate upload quota for a user before allowing client upload
 exports.validateUploadQuota = functions.https.onCall(async (data, context) => {

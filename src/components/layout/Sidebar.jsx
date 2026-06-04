@@ -1,7 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   Home, Compass, BarChart2, Upload, User, Music, X, Star, Calendar,
-  MessageCircle, Trophy, Users, Zap, Crown, Settings, MessageSquare, Clock
+  MessageCircle, Trophy, Users, Zap, Crown, Settings, MessageSquare, Clock, Lock, Activity
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import CreatorBadge from '../common/CreatorBadge';
@@ -100,12 +100,24 @@ export default function Sidebar({ onClose, isOpen, onOpenSettings }) {
         )}
 
         {/* Admin section */}
-        {profile?.role === 'admin' && (
+        {(profile?.role === 'admin' || user?.email === 'bookmarkchatonline@gmail.com' || sessionStorage.getItem('adminAuth') === 'true') && (
           <>
             <div className="nav-section-label">Admin</div>
+            <NavLink to="/admin/dashboard" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
+              <Activity className="nav-icon" size={18} />
+              Dashboard
+            </NavLink>
+            <NavLink to="/admin/users" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
+              <Users className="nav-icon" size={18} />
+              Manage Users
+            </NavLink>
             <NavLink to="/admin/awards" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
               <Star className="nav-icon" size={18} />
               Manage Awards
+            </NavLink>
+            <NavLink to="/admin/tracks" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
+              <Music className="nav-icon" size={18} />
+              Manage Tracks
             </NavLink>
             <NavLink to="/admin/opportunities" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
               <Calendar className="nav-icon" size={18} />
@@ -133,6 +145,14 @@ export default function Sidebar({ onClose, isOpen, onOpenSettings }) {
         >
           <Settings size={15} />
           Settings
+        </button>
+        <button
+          className="btn btn-ghost btn-block"
+          onClick={(e) => { e.stopPropagation(); navigate('/admin/users'); }}
+          style={{ justifyContent: 'center', opacity: 0.5, fontSize: '0.8rem' }}
+        >
+          <Lock size={13} />
+          Admin Portal
         </button>
       </div>
     </aside>

@@ -18,8 +18,35 @@ import {
   onSnapshot,
   arrayUnion,
   arrayRemove,
+  getCountFromServer,
+  getAggregateFromServer,
+  sum
 } from 'firebase/firestore';
 import { db } from './config';
+
+// ─── Platform Stats ──────────────────────────────────────────────────────────
+
+export async function getPlatformStats() {
+  try {
+    const usersColl = collection(db, 'users');
+    const tracksColl = collection(db, 'tracks');
+
+    const usersSnap = await getCountFromServer(usersColl);
+    const tracksSnap = await getCountFromServer(tracksColl);
+    const likesSnap = await getAggregateFromServer(tracksColl, {
+      totalLikes: sum('likes')
+    });
+
+    return {
+      totalUsers: usersSnap.data().count,
+      totalTracks: tracksSnap.data().count,
+      totalLikes: likesSnap.data().totalLikes
+    };
+  } catch (err) {
+    console.error('Failed to get platform stats:', err);
+    return { totalUsers: 0, totalTracks: 0, totalLikes: 0 };
+  }
+}
 
 // ─── Tracks ──────────────────────────────────────────────────────────────────
 
@@ -144,7 +171,7 @@ export async function deleteTrack(trackId, uid) {
 }
 
 /** Get rising tracks — tracks uploaded in last 7 days with most likes */
-export async function getRisingTracks(limitCount = 10) {
+export async function getRisingTracks(limitCount = 6) {
   const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const q = query(
     collection(db, 'tracks'),
@@ -158,6 +185,37 @@ export async function getRisingTracks(limitCount = 10) {
     .map((d) => ({ id: d.id, ...d.data() }))
     .sort((a, b) => (b.likes || 0) - (a.likes || 0))
     .slice(0, limitCount);
+}
+
+// Admin Helpers for Tracks
+export async function getAllAdminTracks(limitCount = 100) {
+  const q = query(
+    collection(db, 'tracks'),
+    orderBy('createdAt', 'desc'),
+    limit(limitCount)
+  );
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+export async function deleteTrackAdmin(trackId, uid) {
+  // Delete the track
+  await deleteDoc(doc(db, 'tracks', trackId));
+  // Decrement user upload count
+  if (uid) {
+    await updateDoc(doc(db, 'users', uid), {
+      'stats.uploads': increment(-1)
+    }).catch(e => console.warn('Could not decrement uploads:', e));
+  }
+}
+
+// Admin Helpers for Users
+export async function deleteUserAdmin(uid) {
+  await deleteDoc(doc(db, 'users', uid));
+}
+
+export async function updateUserRole(uid, role) {
+  await updateDoc(doc(db, 'users', uid), { role });
 }
 
 // ─── Likes ───────────────────────────────────────────────────────────────────

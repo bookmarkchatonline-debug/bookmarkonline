@@ -27,18 +27,24 @@ export default function Discover() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
     Promise.all([
-      getTopTracks(12),
-      getRisingTracks(6),
-      getNewestTracks(12),
-      getTopCreators(6),
+      getTopTracks(12).catch(e => { console.error('getTopTracks err:', e); return []; }),
+      getRisingTracks(6).catch(e => { console.error('getRisingTracks err:', e); return []; }),
+      getNewestTracks(12).catch(e => { console.error('getNewestTracks err:', e); return []; }),
+      getTopCreators(6).catch(e => { console.error('getTopCreators err:', e); return []; }),
     ]).then(([top, rising, newest, creators]) => {
-      setTopTracks(top);
-      setRisingTracks(rising);
-      setNewestTracks(newest);
-      setTopCreators(creators);
+      if (!isMounted) return;
+      setTopTracks(top || []);
+      setRisingTracks(rising || []);
+      setNewestTracks(newest || []);
+      setTopCreators(creators || []);
       setLoading(false);
+    }).catch((e) => {
+      console.error('Discover page error:', e);
+      if (isMounted) setLoading(false);
     });
+    return () => { isMounted = false; };
   }, []);
 
   return (

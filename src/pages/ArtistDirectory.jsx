@@ -32,15 +32,34 @@ export default function ArtistDirectory() {
   const [search, setSearch] = useState('');
 
   useEffect(() => {
+    let isMounted = true;
+    let fallbackTimeout = setTimeout(() => {
+      if (isMounted && loading) {
+        setLoading(false);
+        console.warn('getAllArtists timed out or hung.');
+      }
+    }, 8000);
+
     getAllArtists(100)
       .then((data) => {
-        setArtists(data);
-        setLoading(false);
+        if (isMounted) {
+          setArtists(data || []);
+          setLoading(false);
+          clearTimeout(fallbackTimeout);
+        }
       })
       .catch((err) => {
         console.error('Failed to load artists:', err);
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+          clearTimeout(fallbackTimeout);
+        }
       });
+      
+    return () => {
+      isMounted = false;
+      clearTimeout(fallbackTimeout);
+    };
   }, []);
 
   const filtered = artists

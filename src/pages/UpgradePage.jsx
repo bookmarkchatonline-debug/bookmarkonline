@@ -81,22 +81,10 @@ export default function UpgradePage() {
 
   const currentPlan = profile?.plan || 'free';
 
-  const handleJoinWaitlist = async (planId) => {
-    if (!email.trim()) {
-      toast.error('Please enter your email');
-      return;
-    }
-    setSubmitting(true);
-    try {
-      await joinUpgradeWaitlist(email.trim(), user?.uid, planId);
-      toast.success("You're on the list! We'll notify you when upgrades go live.");
-      setSubmitted(true);
-      setSelectedPlan(planId);
-    } catch (err) {
-      toast.error('Failed to join waitlist');
-    } finally {
-      setSubmitting(false);
-    }
+  const handleJoinWaitlist = (planId) => {
+    const subject = encodeURIComponent('Upgrade Plan Request');
+    const body = encodeURIComponent(`Hi,\n\nI would like to upgrade my plan to: ${planId}\n\nMy details:\nEmail: ${email || ''}\n`);
+    window.location.href = `mailto:Bookmarkchat.online@gmail.com?subject=${subject}&body=${body}`;
   };
 
   return (
