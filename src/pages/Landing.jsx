@@ -152,17 +152,16 @@ export default function Landing() {
           <div className="landing-hero-text">
             <div className="landing-eyebrow">
               <span className="eyebrow-dot" />
-              Independent Music Platform
+              Upload Music. Get Discovered. Build Fans.
             </div>
-            <h1 className="landing-hero-h1">
-              Upload Music.{' '}
-              <span className="hero-gradient-text">Build Fans.</span>
-              {' '}Earn Recognition.
+            <h1 className="landing-hero-h1" style={{ fontSize: 'clamp(1.8rem, 3.5vw, 2.8rem)', lineHeight: 1.2 }}>
+              Where Independent Artists{' '}
+              <span className="hero-gradient-text">Get Discovered</span>
+              <br />Before the Industry Finds Them
             </h1>
             <p className="landing-hero-sub">
-              BookmarkChat is where independent artists discover, compete, and grow.
-              Drop your music, climb the live rankings, and compete for the{' '}
-              <strong className="gold-accent">Gold Tape Award</strong> — no label required.
+              Upload your music, climb the live rankings, connect with other artists, and compete for the{' '}
+              <strong className="gold-accent">Gold Tape Award</strong>—no label required.
             </p>
             <div className="landing-hero-ctas">
               <button className="landing-cta-primary" onClick={() => navigate('/register')}>
