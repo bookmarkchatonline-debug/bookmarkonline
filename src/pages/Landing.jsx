@@ -154,13 +154,13 @@ export default function Landing() {
               <span className="eyebrow-dot" />
               Upload Music. Get Discovered. Build Fans.
             </div>
-            <h1 className="landing-hero-h1" style={{ fontSize: 'clamp(1.8rem, 3.5vw, 2.8rem)', lineHeight: 1.2 }}>
+            <h1 className="landing-hero-h1" style={{ fontSize: 'clamp(1.5rem, 3vw, 2.3rem)', lineHeight: 1.2, textWrap: 'balance' }}>
               Where Independent Artists{' '}
               <span className="hero-gradient-text">Get Discovered</span>
               <br />Before the Industry Finds Them
             </h1>
             <p className="landing-hero-sub">
-              Upload your music, climb the live rankings, connect with other artists, and compete for the{' '}
+              Upload your music, get discovered, build fans, climb the live rankings, and compete for the{' '}
               <strong className="gold-accent">Gold Tape Award</strong>—no label required.
             </p>
             <div className="landing-hero-ctas">
