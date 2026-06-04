@@ -13,6 +13,8 @@ import Upload from './pages/Upload';
 import Profile from './pages/Profile';
 import TrackPage from './pages/TrackPage';
 import Feed from './pages/Feed';
+import Community from './pages/Community';
+import DiscussionThread from './pages/DiscussionThread';
 import AwardsPage from './pages/AwardsPage';
 import ArtistDirectory from './pages/ArtistDirectory';
 import OpportunitiesPage from './pages/OpportunitiesPage';
@@ -24,7 +26,7 @@ import AdminOpportunities from './pages/Admin/Opportunities';
 import { useAuth } from './context/AuthContext';
 
 // Pages that use the full app shell (sidebar + topbar + player)
-const SHELL_ROUTES = ['/', '/discover', '/rankings', '/upload', '/profile', '/track', '/admin', '/feed', '/awards', '/artists', '/opportunities', '/upgrade'];
+const SHELL_ROUTES = ['/', '/discover', '/rankings', '/upload', '/profile', '/track', '/admin', '/feed', '/community', '/awards', '/artists', '/opportunities', '/upgrade'];
 
 function isShellRoute(pathname, isLoggedIn) {
   if (pathname === '/') return isLoggedIn; // landing doesn't use shell
@@ -120,6 +122,8 @@ export default function App() {
             <Route path="/discover" element={<Discover />} />
             <Route path="/rankings" element={<Rankings />} />
             <Route path="/feed" element={<Feed />} />
+            <Route path="/community" element={<Community />} />
+            <Route path="/community/:id" element={<DiscussionThread />} />
             <Route path="/awards" element={<AwardsPage />} />
             <Route path="/artists" element={<ArtistDirectory />} />
             <Route path="/opportunities" element={<OpportunitiesPage />} />

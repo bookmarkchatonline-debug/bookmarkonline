@@ -1,7 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   Home, Compass, BarChart2, Upload, User, Music, X, Star, Calendar,
-  MessageCircle, Trophy, Users, Zap, Crown, Settings,
+  MessageCircle, Trophy, Users, Zap, Crown, Settings, MessageSquare
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import CreatorBadge from '../common/CreatorBadge';
@@ -12,6 +12,7 @@ const navItems = [
   { to: '/discover',      icon: Compass,       label: 'Discover' },
   { to: '/rankings',      icon: BarChart2,     label: 'Rankings' },
   { to: '/feed',          icon: MessageCircle, label: 'Feed' },
+  { to: '/community',     icon: MessageSquare, label: 'Community' },
   { to: '/artists',       icon: Users,         label: 'Artists' },
   { to: '/awards',        icon: Trophy,        label: 'Awards' },
   { to: '/opportunities', icon: Calendar,      label: 'Opportunities' },

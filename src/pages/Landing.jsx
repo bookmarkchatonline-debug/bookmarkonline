@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useEffect, useState, useRef } from 'react';
 import {
   Music, Trophy, TrendingUp, Zap, ArrowRight,
-  Play, Flame, ChevronDown, Upload, Star, Radio
+  Play, Flame, ChevronDown, Upload, Star, Radio, Users
 } from 'lucide-react';
 import '../styles/landing.css';
 
@@ -421,8 +421,22 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* ─── Why BookmarkChat? ──────────────────────────────────────────────── */}
+      <section className="landing-why-bookmarkchat" style={{ padding: '100px 0 20px', textAlign: 'center' }}>
+        <div className="landing-section-inner" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <div className="section-label">Why BookmarkChat?</div>
+          <h2 className="landing-section-title">Built for artists. Powered by community.</h2>
+          <p className="landing-section-sub" style={{ marginBottom: '20px', color: '#9ca3af', fontSize: '1.1rem' }}>
+            Most platforms focus on streams, likes, and followers.
+          </p>
+          <p className="landing-section-sub" style={{ marginBottom: '0', color: '#f1f0f5', fontSize: '1.15rem', maxWidth: '700px' }}>
+            BookmarkChat focuses on discovery, community, artist rankings, and recognition. Here, independent artists can upload music, build a fanbase, connect with other creators, and compete for the Gold Tape Award.
+          </p>
+        </div>
+      </section>
+
       {/* ─── Why Join ─────────────────────────────────────────────────────── */}
-      <section className="landing-why">
+      <section className="landing-why" style={{ paddingTop: '60px' }}>
         <div className="landing-section-inner">
           <div className="section-label">Why Artists Choose BookmarkChat</div>
           <h2 className="landing-section-title">Built Different. Built for You.</h2>
@@ -436,6 +450,24 @@ export default function Landing() {
                 <p className="why-card-desc">{card.desc}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Community Section ──────────────────────────────────────────────── */}
+      <section className="landing-community" style={{ padding: '80px 0', background: 'linear-gradient(180deg, rgba(7,6,14,0), rgba(236,72,153,0.03) 50%, rgba(7,6,14,0))' }}>
+        <div className="landing-section-inner" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+          <div className="section-label" style={{ color: '#ec4899' }}>Community</div>
+          <h2 className="landing-section-title">Connect and Collaborate</h2>
+          <p className="landing-section-sub" style={{ maxWidth: '600px', margin: '0 auto 40px' }}>
+            Artists can connect, collaborate, and build relationships, not just upload music. BookmarkChat is a thriving network where you grow together.
+          </p>
+          <div className="community-visual" style={{ 
+            width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(236,72,153,0.1)', 
+            display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ec4899',
+            boxShadow: '0 0 40px rgba(236,72,153,0.15)'
+          }}>
+            <Users size={36} />
           </div>
         </div>
       </section>
@@ -471,6 +503,18 @@ export default function Landing() {
             <span>Bookmark<span className="logo-accent">Chat</span></span>
           </div>
           <p className="footer-tagline">The home for rising independent artists.</p>
+          
+          <div className="footer-links-grid" style={{ 
+            display: 'flex', gap: '30px', margin: '20px 0', flexWrap: 'wrap', justifyContent: 'center' 
+          }}>
+            <a href="#" className="footer-link">About</a>
+            <a href="mailto:Bookmarkchat.online@gmail.com" className="footer-link">Bookmarkchat.online@gmail.com</a>
+            <a href="#" className="footer-link">Privacy Policy</a>
+            <a href="#" className="footer-link">Terms</a>
+            <a href="https://www.instagram.com/bookmarkchat.online?igsh=NTc4MTIwNjQ2YQ%3D%3D&utm_source=qr" target="_blank" rel="noopener noreferrer" className="footer-link">Instagram</a>
+            <a href="https://www.tiktok.com/@bookmarkchat.online?_r=1&_t=ZP-96vCelDNyCE" target="_blank" rel="noopener noreferrer" className="footer-link">TikTok</a>
+          </div>
+
           <div className="footer-links">
             <button onClick={() => navigate('/login')}>Sign In</button>
             <button onClick={() => navigate('/register')}>Sign Up</button>

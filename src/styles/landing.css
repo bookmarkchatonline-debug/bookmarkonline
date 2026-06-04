@@ -1048,6 +1048,18 @@
   font-family: inherit;
 }
 .footer-links button:hover { color: #a855f7; }
+
+.footer-link {
+  color: rgba(241,240,245,0.6);
+  font-size: 0.8125rem;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+.footer-link:hover {
+  color: #a855f7;
+}
+
 .footer-copy { font-size: 0.75rem; color: rgba(241,240,245,0.25); margin: 0; }
 
 /* ─── Responsive Hero ─────────────────────────────────────────────────────── */
