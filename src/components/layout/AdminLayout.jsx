@@ -7,7 +7,7 @@ export default function AdminLayout({ children }) {
     <AdminGuard>
       <div style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden', backgroundColor: 'var(--bg-base)' }}>
         <AdminSidebar />
-        <main style={{ flex: 1, overflowY: 'auto', padding: '30px', position: 'relative' }}>
+        <main style={{ flex: 1, overflowY: 'auto', padding: '30px', position: 'relative', marginLeft: 'var(--sidebar-width)' }}>
           {children}
         </main>
         <Toaster

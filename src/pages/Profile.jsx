@@ -278,6 +278,12 @@ export default function Profile() {
     ? new Date(profile.createdAt.seconds * 1000).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
     : null;
 
+  const planName = profile?.plan === 'creator_pro' ? 'Creator Pro' : profile?.plan === 'gold_creator' ? 'Gold Creator' : 'Free Plan';
+  
+  const planExpires = profile?.planExpiresAt?.seconds
+    ? new Date(profile.planExpiresAt.seconds * 1000).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+    : null;
+
   // ── Loading skeleton ──────────────────────────────────────────────────────
   if (loading) {
     return (
@@ -425,6 +431,13 @@ export default function Profile() {
             <div className="profile-member-since">
               <Calendar size={12} />
               Member since {memberSince}
+            </div>
+          )}
+
+          {isOwn && profile?.plan !== 'free' && (
+            <div className="profile-member-since" style={{ marginTop: '4px', color: 'var(--accent)' }}>
+              <Star size={12} />
+              {planName} {planExpires ? `(Expires: ${planExpires})` : ''}
             </div>
           )}
         </div>

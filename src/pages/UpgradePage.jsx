@@ -47,6 +47,7 @@ const PLANS = [
       { text: 'AI Vault access (coming soon)', included: false },
     ],
     cta: 'Upgrade Plan',
+    url: 'https://buy.stripe.com/8x228scoe2qpa8l0zjbZe00',
     popular: true,
   },
   {
@@ -68,6 +69,7 @@ const PLANS = [
       { text: 'AI Vault early access', included: true },
     ],
     cta: 'Upgrade Plan',
+    url: 'https://buy.stripe.com/eVqfZibka3uteoB81LbZe01',
     popular: false,
   },
 ];
@@ -82,11 +84,16 @@ export default function UpgradePage() {
   const currentPlan = profile?.plan || 'free';
 
   const handleUpgradeRequest = (planId) => {
-    const subject = encodeURIComponent(`Upgrade Plan Request - ${planId}`);
-    const body = encodeURIComponent(`Hi,\n\nI would like to upgrade my plan to: ${planId}\n\nMy details:\nEmail: ${email || ''}\n\nPlease let me know the payment options and available durations (e.g., monthly, yearly) so I can complete the upgrade.\n\nOnce I make the payment, you can manually verify and upgrade my plan and duration.\n`);
-    window.location.href = `mailto:Bookmarkchat.online@gmail.com?subject=${subject}&body=${body}`;
-    setSubmitted(true);
-    setSelectedPlan(planId);
+    const plan = PLANS.find((p) => p.id === planId);
+    if (!user) {
+      toast.error('Please log in to upgrade your plan');
+      return;
+    }
+    if (plan && plan.url) {
+      setSubmitting(true);
+      const checkoutUrl = `${plan.url}?client_reference_id=${user.uid}&prefilled_email=${encodeURIComponent(email || user.email || '')}`;
+      window.location.href = checkoutUrl;
+    }
   };
 
   return (
@@ -161,7 +168,7 @@ export default function UpgradePage() {
                 ) : isRequested ? (
                   <button className="btn btn-ghost btn-block" disabled>
                     <Check size={15} />
-                    Requested ✓
+                    Redirecting...
                   </button>
                 ) : (
                   <div className="upgrade-waitlist-form">
@@ -194,7 +201,7 @@ export default function UpgradePage() {
         <div className="upgrade-faq-grid">
           <div className="upgrade-faq-item">
             <h4>How do I upgrade my plan?</h4>
-            <p>Click "Upgrade Plan" to send us an email request. We will reply with payment instructions. Once you pay and we verify it, we will manually upgrade your plan and duration.</p>
+            <p>Click "Upgrade Plan" to go to the secure Stripe checkout. Once you pay, your account will be automatically upgraded to the new plan.</p>
           </div>
           <div className="upgrade-faq-item">
             <h4>Will I lose my free features?</h4>

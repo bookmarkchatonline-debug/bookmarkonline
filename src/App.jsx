@@ -19,6 +19,7 @@ import AwardsPage from './pages/AwardsPage';
 import ArtistDirectory from './pages/ArtistDirectory';
 import OpportunitiesPage from './pages/OpportunitiesPage';
 import UpgradePage from './pages/UpgradePage';
+import UpgradeSuccess from './pages/UpgradeSuccess';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import AdminAwards from './pages/Admin/Awards';
@@ -160,6 +161,7 @@ export default function App() {
             <Route path="/artists" element={<ArtistDirectory />} />
             <Route path="/opportunities" element={<OpportunitiesPage />} />
             <Route path="/upgrade" element={<UpgradePage />} />
+            <Route path="/upgrade/success" element={<UpgradeSuccess />} />
             <Route path="/upload" element={<Upload />} />
             <Route path="/history" element={<History />} />
             <Route path="/profile/:uid" element={<Profile />} />
