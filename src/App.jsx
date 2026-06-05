@@ -26,7 +26,7 @@ import AdminOpportunities from './pages/Admin/Opportunities';
 import AdminUsers from './pages/Admin/Users';
 import AdminDashboard from './pages/Admin/Dashboard';
 import AdminTracks from './pages/Admin/Tracks';
-import AdminGuard from './components/layout/AdminGuard';
+import AdminLayout from './components/layout/AdminLayout';
 import History from './pages/History';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
@@ -34,7 +34,7 @@ import About from './pages/About';
 import { useAuth } from './context/AuthContext';
 
 // Pages that use the full app shell (sidebar + topbar + player)
-const SHELL_ROUTES = ['/', '/discover', '/rankings', '/upload', '/profile', '/track', '/admin', '/feed', '/community', '/awards', '/artists', '/opportunities', '/upgrade', '/history'];
+const SHELL_ROUTES = ['/', '/discover', '/rankings', '/upload', '/profile', '/track', '/feed', '/community', '/awards', '/artists', '/opportunities', '/upgrade', '/history'];
 
 
 const NON_SHELL_ROUTES = ['/login', '/register', '/privacy', '/terms', '/about'];
@@ -50,7 +50,8 @@ export default function App() {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const useShell = isShellRoute(location.pathname, !!user);
+  const isAdminRoute = location.pathname.startsWith('/admin');
+  const useShell = !isAdminRoute && isShellRoute(location.pathname, !!user);
 
   // Show spinner while Firebase auth is resolving
   if (loading) {
@@ -61,6 +62,22 @@ export default function App() {
         </div>
         <div className="spinner" />
       </div>
+    );
+  }
+
+  // Admin routes - render with dedicated AdminLayout
+  if (isAdminRoute) {
+    return (
+      <AdminLayout>
+        <Routes>
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/awards" element={<AdminAwards />} />
+          <Route path="/admin/opportunities" element={<AdminOpportunities />} />
+          <Route path="/admin/users" element={<AdminUsers />} />
+          <Route path="/admin/tracks" element={<AdminTracks />} />
+          <Route path="*" element={<AdminDashboard />} />
+        </Routes>
+      </AdminLayout>
     );
   }
 
@@ -146,11 +163,6 @@ export default function App() {
             <Route path="/upload" element={<Upload />} />
             <Route path="/history" element={<History />} />
             <Route path="/profile/:uid" element={<Profile />} />
-            <Route path="/admin/dashboard" element={<AdminGuard><AdminDashboard /></AdminGuard>} />
-            <Route path="/admin/awards" element={<AdminGuard><AdminAwards /></AdminGuard>} />
-            <Route path="/admin/opportunities" element={<AdminGuard><AdminOpportunities /></AdminGuard>} />
-            <Route path="/admin/users" element={<AdminGuard><AdminUsers /></AdminGuard>} />
-            <Route path="/admin/tracks" element={<AdminGuard><AdminTracks /></AdminGuard>} />
             <Route path="/track/:id" element={<TrackPage />} />
             {/* fallback */}
             <Route path="*" element={<Home />} />

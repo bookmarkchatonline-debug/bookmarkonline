@@ -7,7 +7,7 @@ export default function AdminGuard({ children }) {
   const { user, profile } = useAuth();
   
   // Also allow Firebase auth users who are marked as admin, or explicitly the owner email.
-  const isFirebaseAdmin = profile?.role === 'admin' || user?.email === 'bookmarkchatonline@gmail.com';
+  const isFirebaseAdmin = profile?.role === 'admin' || user?.email === 'bookmarkchat.online@gmail.com';
   
   const [isAuthenticated, setIsAuthenticated] = useState(
     isFirebaseAdmin || sessionStorage.getItem('adminAuth') === 'true'
@@ -21,7 +21,7 @@ export default function AdminGuard({ children }) {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    if (email === 'bookmarkchatonline@gmail.com' && password === 'BookMarkChatOnline@@2026') {
+    if (email === 'bookmarkchat.online@gmail.com' && password === 'BookMarkChat.Online@2026') {
       sessionStorage.setItem('adminAuth', 'true');
       setIsAuthenticated(true);
       toast.success('Admin access granted');
