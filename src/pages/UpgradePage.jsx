@@ -46,7 +46,7 @@ const PLANS = [
       { text: 'Priority placement', included: false },
       { text: 'AI Vault access (coming soon)', included: false },
     ],
-    cta: 'Join Waitlist',
+    cta: 'Upgrade Plan',
     popular: true,
   },
   {
@@ -67,7 +67,7 @@ const PLANS = [
       { text: 'Priority placement', included: true },
       { text: 'AI Vault early access', included: true },
     ],
-    cta: 'Join Waitlist',
+    cta: 'Upgrade Plan',
     popular: false,
   },
 ];
@@ -81,10 +81,12 @@ export default function UpgradePage() {
 
   const currentPlan = profile?.plan || 'free';
 
-  const handleJoinWaitlist = (planId) => {
-    const subject = encodeURIComponent('Upgrade Plan Request');
-    const body = encodeURIComponent(`Hi,\n\nI would like to upgrade my plan to: ${planId}\n\nMy details:\nEmail: ${email || ''}\n`);
+  const handleUpgradeRequest = (planId) => {
+    const subject = encodeURIComponent(`Upgrade Plan Request - ${planId}`);
+    const body = encodeURIComponent(`Hi,\n\nI would like to upgrade my plan to: ${planId}\n\nMy details:\nEmail: ${email || ''}\n\nPlease let me know the payment options and available durations (e.g., monthly, yearly) so I can complete the upgrade.\n\nOnce I make the payment, you can manually verify and upgrade my plan and duration.\n`);
     window.location.href = `mailto:Bookmarkchat.online@gmail.com?subject=${subject}&body=${body}`;
+    setSubmitted(true);
+    setSelectedPlan(planId);
   };
 
   return (
@@ -108,7 +110,7 @@ export default function UpgradePage() {
         {PLANS.map((plan) => {
           const Icon = plan.icon;
           const isCurrent = plan.id === currentPlan;
-          const isWaitlisted = submitted && selectedPlan === plan.id;
+          const isRequested = submitted && selectedPlan === plan.id;
 
           return (
             <div
@@ -156,10 +158,10 @@ export default function UpgradePage() {
                   <button className="btn btn-ghost btn-block" disabled>
                     Free Forever
                   </button>
-                ) : isWaitlisted ? (
+                ) : isRequested ? (
                   <button className="btn btn-ghost btn-block" disabled>
                     <Check size={15} />
-                    On Waitlist ✓
+                    Requested ✓
                   </button>
                 ) : (
                   <div className="upgrade-waitlist-form">
@@ -172,10 +174,10 @@ export default function UpgradePage() {
                     />
                     <button
                       className={`btn ${plan.popular ? 'btn-primary' : 'btn-ghost'} btn-block`}
-                      onClick={() => handleJoinWaitlist(plan.id)}
+                      onClick={() => handleUpgradeRequest(plan.id)}
                       disabled={submitting}
                     >
-                      {submitting ? 'Joining...' : plan.cta}
+                      {submitting ? 'Requesting...' : plan.cta}
                       <ArrowRight size={14} />
                     </button>
                   </div>
@@ -191,8 +193,8 @@ export default function UpgradePage() {
         <h2>Frequently Asked Questions</h2>
         <div className="upgrade-faq-grid">
           <div className="upgrade-faq-item">
-            <h4>When will paid plans launch?</h4>
-            <p>We're building the premium experience right now. Join the waitlist to be the first to know when upgrades go live.</p>
+            <h4>How do I upgrade my plan?</h4>
+            <p>Click "Upgrade Plan" to send us an email request. We will reply with payment instructions. Once you pay and we verify it, we will manually upgrade your plan and duration.</p>
           </div>
           <div className="upgrade-faq-item">
             <h4>Will I lose my free features?</h4>

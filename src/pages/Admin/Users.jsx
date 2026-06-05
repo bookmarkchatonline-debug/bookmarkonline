@@ -46,6 +46,17 @@ export default function AdminUsers() {
     }
   };
 
+  const handleUpdateExpiry = async (userId, newExpiry) => {
+    try {
+      await updateDoc(doc(db, 'users', userId), { planExpiry: newExpiry });
+      toast.success('User plan expiry updated successfully');
+      setUsers(users.map(u => u.id === userId ? { ...u, planExpiry: newExpiry } : u));
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to update plan expiry');
+    }
+  };
+
   const handleUpdateRole = async (userId, newRole) => {
     try {
       await updateUserRole(userId, newRole);
@@ -104,14 +115,15 @@ export default function AdminUsers() {
               <th style={{ padding: '16px', fontWeight: 600, color: 'var(--text-secondary)' }}>Email</th>
               <th style={{ padding: '16px', fontWeight: 600, color: 'var(--text-secondary)' }}>Role</th>
               <th style={{ padding: '16px', fontWeight: 600, color: 'var(--text-secondary)' }}>Current Plan</th>
+              <th style={{ padding: '16px', fontWeight: 600, color: 'var(--text-secondary)' }}>Expiry Date</th>
               <th style={{ padding: '16px', fontWeight: 600, color: 'var(--text-secondary)', textAlign: 'right' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan="5" style={{ padding: '24px', textAlign: 'center' }}>Loading users...</td></tr>
+              <tr><td colSpan="6" style={{ padding: '24px', textAlign: 'center' }}>Loading users...</td></tr>
             ) : filteredUsers.length === 0 ? (
-              <tr><td colSpan="5" style={{ padding: '24px', textAlign: 'center' }}>No users found.</td></tr>
+              <tr><td colSpan="6" style={{ padding: '24px', textAlign: 'center' }}>No users found.</td></tr>
             ) : (
               filteredUsers.map(user => (
                 <tr key={user.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
@@ -150,6 +162,15 @@ export default function AdminUsers() {
                         {user.plan === 'gold_creator' ? 'Gold Creator' : user.plan === 'creator_pro' ? 'Creator Pro' : 'Free Artist'}
                       </span>
                     </div>
+                  </td>
+                  <td style={{ padding: '16px' }}>
+                    <input 
+                      type="date"
+                      className="input"
+                      style={{ padding: '6px 12px', fontSize: '0.75rem', width: 'auto', background: 'var(--bg-glass)', border: 'none' }}
+                      value={user.planExpiry || ''}
+                      onChange={(e) => handleUpdateExpiry(user.id, e.target.value)}
+                    />
                   </td>
                   <td style={{ padding: '16px', textAlign: 'right' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>
