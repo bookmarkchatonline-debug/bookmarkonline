@@ -114,7 +114,7 @@ export default function AdminUsers() {
               <th style={{ padding: '16px', fontWeight: 600, color: 'var(--text-secondary)' }}>User</th>
               <th style={{ padding: '16px', fontWeight: 600, color: 'var(--text-secondary)' }}>Email</th>
               <th style={{ padding: '16px', fontWeight: 600, color: 'var(--text-secondary)' }}>Role</th>
-              <th style={{ padding: '16px', fontWeight: 600, color: 'var(--text-secondary)' }}>Current Plan</th>
+              <th style={{ padding: '16px', fontWeight: 600, color: 'var(--text-secondary)' }}>Plan</th>
               <th style={{ padding: '16px', fontWeight: 600, color: 'var(--text-secondary)' }}>Expiry Date</th>
               <th style={{ padding: '16px', fontWeight: 600, color: 'var(--text-secondary)', textAlign: 'right' }}>Actions</th>
             </tr>
@@ -143,56 +143,58 @@ export default function AdminUsers() {
                   <td style={{ padding: '16px' }}>
                     <select 
                       className="input" 
-                      style={{ padding: '6px 12px', fontSize: '0.75rem', width: 'auto', display: 'inline-block', background: 'var(--bg-glass)', border: 'none', textTransform: 'uppercase' }}
+                      style={{ padding: '6px 12px', fontSize: '0.75rem', width: 'auto', display: 'inline-block', background: 'var(--bg-glass)', color: 'var(--text-primary)', border: 'none', textTransform: 'uppercase', colorScheme: 'dark' }}
                       value={user.role || 'listener'}
                       onChange={(e) => handleUpdateRole(user.id, e.target.value)}
                     >
-                      <option value="listener">Listener</option>
-                      <option value="artist">Artist</option>
-                      <option value="admin">Admin</option>
+                      <option value="listener" style={{ background: '#1e1e1e', color: '#fff' }}>Listener</option>
+                      <option value="artist" style={{ background: '#1e1e1e', color: '#fff' }}>Artist</option>
+                      <option value="admin" style={{ background: '#1e1e1e', color: '#fff' }}>Admin</option>
                     </select>
                   </td>
                   <td style={{ padding: '16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       {user.plan === 'gold_creator' ? <Crown size={14} color="#facc15" /> : null}
-                      <span style={{ 
-                        fontWeight: 600, 
-                        color: user.plan === 'gold_creator' ? '#facc15' : user.plan === 'creator_pro' ? '#a855f7' : 'var(--text-primary)' 
-                      }}>
-                        {user.plan === 'gold_creator' ? 'Gold Creator' : user.plan === 'creator_pro' ? 'Creator Pro' : 'Free Artist'}
-                      </span>
+                      <select 
+                        className="input" 
+                        style={{ 
+                          padding: '6px 12px', 
+                          fontSize: '0.8rem', 
+                          width: 'auto', 
+                          display: 'inline-block',
+                          background: 'var(--bg-glass)',
+                          border: 'none',
+                          color: user.plan === 'gold_creator' ? '#facc15' : user.plan === 'creator_pro' ? '#a855f7' : 'var(--text-primary)',
+                          fontWeight: 600,
+                          colorScheme: 'dark'
+                        }}
+                        value={user.plan || 'free'}
+                        onChange={(e) => handleUpdatePlan(user.id, e.target.value)}
+                      >
+                        <option value="free" style={{ background: '#1e1e1e', color: '#fff' }}>Free</option>
+                        <option value="creator_pro" style={{ background: '#1e1e1e', color: '#a855f7' }}>Creator Pro</option>
+                        <option value="gold_creator" style={{ background: '#1e1e1e', color: '#facc15' }}>Gold Creator</option>
+                      </select>
                     </div>
                   </td>
                   <td style={{ padding: '16px' }}>
                     <input 
                       type="date"
                       className="input"
-                      style={{ padding: '6px 12px', fontSize: '0.75rem', width: 'auto', background: 'var(--bg-glass)', border: 'none' }}
+                      style={{ padding: '6px 12px', fontSize: '0.75rem', width: 'auto', background: 'var(--bg-glass)', color: 'var(--text-primary)', border: 'none', colorScheme: 'dark' }}
                       value={user.planExpiry || ''}
                       onChange={(e) => handleUpdateExpiry(user.id, e.target.value)}
                     />
                   </td>
                   <td style={{ padding: '16px', textAlign: 'right' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>
-                      <select 
-                        className="input" 
-                        style={{ padding: '6px 12px', fontSize: '0.85rem', width: 'auto', display: 'inline-block' }}
-                        value={user.plan || 'free'}
-                        onChange={(e) => handleUpdatePlan(user.id, e.target.value)}
-                      >
-                        <option value="free">Free</option>
-                        <option value="creator_pro">Creator Pro ($9.99/mo)</option>
-                        <option value="gold_creator">Gold Creator ($24.99/mo)</option>
-                      </select>
-                      <button 
-                        className="btn-icon" 
-                        onClick={() => handleDeleteUser(user.id)}
-                        title="Delete User"
-                        style={{ color: '#ef4444' }}
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
+                    <button 
+                      className="btn-icon" 
+                      onClick={() => handleDeleteUser(user.id)}
+                      title="Delete User"
+                      style={{ color: '#ef4444' }}
+                    >
+                      <Trash2 size={18} />
+                    </button>
                   </td>
                 </tr>
               ))
