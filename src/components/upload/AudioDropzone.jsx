@@ -1,9 +1,9 @@
 // src/components/upload/AudioDropzone.jsx
 import { useState, useRef, useCallback } from 'react';
 import { Music, Upload, CheckCircle, AlertCircle, X } from 'lucide-react';
-import { validateAudioDuration } from '../../cloudinary/upload';
+import { validateMediaDuration } from '../../cloudinary/upload';
 
-const ACCEPTED = ['audio/mpeg', 'audio/wav', 'audio/aac', 'audio/mp4', 'audio/ogg', 'audio/webm'];
+const ACCEPTED = ['audio/mpeg', 'audio/wav', 'audio/aac', 'audio/mp4', 'audio/ogg', 'audio/webm', 'video/mp4', 'video/webm', 'video/quicktime'];
 
 export default function AudioDropzone({ onFileReady }) {
   const [dragOver, setDragOver] = useState(false);
@@ -18,14 +18,20 @@ export default function AudioDropzone({ onFileReady }) {
     setFile(null);
     setDuration(null);
 
-    if (!ACCEPTED.includes(f.type) && !f.name.match(/\.(mp3|wav|aac|m4a|ogg)$/i)) {
-      setError('Please upload an MP3, WAV, AAC, or OGG file.');
+    if (!ACCEPTED.includes(f.type) && !f.name.match(/\.(mp3|wav|aac|m4a|ogg|mp4|mov|webm)$/i)) {
+      setError('Please upload an MP3, WAV, AAC, MP4, or MOV file.');
+      return;
+    }
+
+    // Enforce 100MB limit
+    if (f.size > 100 * 1024 * 1024) {
+      setError('File size must be less than 100MB.');
       return;
     }
 
     setValidating(true);
     try {
-      const dur = await validateAudioDuration(f);
+      const dur = await validateMediaDuration(f);
       setFile(f);
       setDuration(dur);
       onFileReady(f, dur);
@@ -72,10 +78,10 @@ export default function AudioDropzone({ onFileReady }) {
         <input
           ref={inputRef}
           type="file"
-          accept=".mp3,.wav,.aac,.m4a,.ogg,audio/*"
+          accept=".mp3,.wav,.aac,.m4a,.ogg,.mp4,.mov,.webm,audio/*,video/*"
           style={{ display: 'none' }}
           onChange={onInputChange}
-          id="audio-file-input"
+          id="media-file-input"
         />
 
         {validating ? (
@@ -83,7 +89,7 @@ export default function AudioDropzone({ onFileReady }) {
             <div className="dropzone-icon">
               <div className="spinner" />
             </div>
-            <div className="dropzone-title">Validating audio...</div>
+            <div className="dropzone-title">Validating media...</div>
           </>
         ) : file ? (
           <>
@@ -92,7 +98,7 @@ export default function AudioDropzone({ onFileReady }) {
             </div>
             <div className="dropzone-file-name">{file.name}</div>
             <div className="dropzone-duration">
-              Duration: {Math.round(duration)}s ✓ (15–30s max)
+              Duration: {Math.round(duration)}s ✓ (180s max)
             </div>
             <button
               className="dropzone-btn"
@@ -107,8 +113,8 @@ export default function AudioDropzone({ onFileReady }) {
             <div className="dropzone-icon">
               <Music size={24} />
             </div>
-            <div className="dropzone-title">Drag &amp; Drop Audio</div>
-            <div className="dropzone-subtitle">MP3, WAV or AAC · 15–30 seconds max</div>
+            <div className="dropzone-title">Drag &amp; Drop Media</div>
+            <div className="dropzone-subtitle">Audio or Video (Max 180s / 100MB)</div>
             <button className="dropzone-btn" onClick={(e) => { e.stopPropagation(); inputRef.current?.click(); }}>
               <Upload size={13} style={{ display: 'inline', marginRight: 5 }} />
               Select File

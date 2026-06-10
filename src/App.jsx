@@ -15,6 +15,7 @@ import TrackPage from './pages/TrackPage';
 import Feed from './pages/Feed';
 import Community from './pages/Community';
 import DiscussionThread from './pages/DiscussionThread';
+import Messages from './pages/Messages';
 import AwardsPage from './pages/AwardsPage';
 import ArtistDirectory from './pages/ArtistDirectory';
 import OpportunitiesPage from './pages/OpportunitiesPage';
@@ -35,7 +36,7 @@ import About from './pages/About';
 import { useAuth } from './context/AuthContext';
 
 // Pages that use the full app shell (sidebar + topbar + player)
-const SHELL_ROUTES = ['/', '/discover', '/rankings', '/upload', '/profile', '/track', '/feed', '/community', '/awards', '/artists', '/opportunities', '/upgrade', '/history'];
+const SHELL_ROUTES = ['/', '/discover', '/rankings', '/upload', '/profile', '/track', '/feed', '/community', '/messages', '/awards', '/artists', '/opportunities', '/upgrade', '/history'];
 
 
 const NON_SHELL_ROUTES = ['/login', '/register', '/privacy', '/terms', '/about'];
@@ -157,6 +158,8 @@ export default function App() {
             <Route path="/feed" element={<Feed />} />
             <Route path="/community" element={<Community />} />
             <Route path="/community/:id" element={<DiscussionThread />} />
+            <Route path="/messages" element={<Messages />} />
+            <Route path="/messages/:chatId" element={<Messages />} />
             <Route path="/awards" element={<AwardsPage />} />
             <Route path="/artists" element={<ArtistDirectory />} />
             <Route path="/opportunities" element={<OpportunitiesPage />} />

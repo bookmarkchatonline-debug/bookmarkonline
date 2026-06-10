@@ -12,7 +12,8 @@ export default function Register() {
     username: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    role: 'artist'
   });
 
   const handleSubmit = async (e) => {
@@ -30,8 +31,7 @@ export default function Register() {
 
     setLoading(true);
     try {
-      // Role is automatically set to 'artist' inside the auth.js register function
-      await register(formData.email, formData.password, formData.username, 'artist');
+      await register(formData.email, formData.password, formData.username, formData.role);
       toast.success('Account created successfully!');
       navigate('/');
     } catch (err) {
@@ -43,7 +43,7 @@ export default function Register() {
 
   const handleSocialLogin = async (provider) => {
     try {
-      if (provider === 'google') await loginWithGoogle();
+      if (provider === 'google') await loginWithGoogle(formData.role);
       navigate('/');
     } catch (err) {
       toast.error(`Failed to sign in with ${provider}`);
@@ -58,7 +58,7 @@ export default function Register() {
       <div className="auth-card">
         <div className="auth-header">
           <div className="auth-logo">
-            BOOKMARK<span>CHAT</span>
+            <img src="/mainlogo2.png" alt="BookmarkChat Logo" style={{ height: '40px', width: 'auto', objectFit: 'contain' }} />
           </div>
           <h1 className="auth-title">Join the Movement</h1>
           <p className="auth-subtitle">Create your artist profile and start sharing your sound.</p>
@@ -124,6 +124,28 @@ export default function Register() {
                 required
                 minLength={6}
               />
+            </div>
+          </div>
+
+          <div className="input-group">
+            <label className="input-label">Account Type</label>
+            <div className="role-selector" style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
+              <button
+                type="button"
+                className={`btn ${formData.role === 'artist' ? 'btn-primary' : 'btn-outline'}`}
+                onClick={() => setFormData({ ...formData, role: 'artist' })}
+                style={{ flex: 1 }}
+              >
+                Artist
+              </button>
+              <button
+                type="button"
+                className={`btn ${formData.role === 'listener' ? 'btn-primary' : 'btn-outline'}`}
+                onClick={() => setFormData({ ...formData, role: 'listener' })}
+                style={{ flex: 1 }}
+              >
+                Listener
+              </button>
             </div>
           </div>
 

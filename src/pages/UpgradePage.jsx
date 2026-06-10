@@ -83,7 +83,7 @@ export default function UpgradePage() {
 
   const currentPlan = profile?.plan || 'free';
 
-  const handleUpgradeRequest = (planId) => {
+  const handleUpgradeRequest = async (planId) => {
     const plan = PLANS.find((p) => p.id === planId);
     if (!user) {
       toast.error('Please log in to upgrade your plan');
@@ -93,6 +93,19 @@ export default function UpgradePage() {
       setSubmitting(true);
       const checkoutUrl = `${plan.url}?client_reference_id=${user.uid}&prefilled_email=${encodeURIComponent(email || user.email || '')}`;
       window.location.href = checkoutUrl;
+    } else if (plan) {
+      setSubmitting(true);
+      try {
+        await joinUpgradeWaitlist(email || user?.email, user.uid, planId);
+        toast.success(`You've been added to the waitlist for ${plan.name}!`);
+        setSubmitted(true);
+        setSelectedPlan(planId);
+      } catch (err) {
+        toast.error('Failed to join waitlist');
+        console.error(err);
+      } finally {
+        setSubmitting(false);
+      }
     }
   };
 

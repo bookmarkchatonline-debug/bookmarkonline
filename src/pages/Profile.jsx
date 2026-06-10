@@ -7,6 +7,8 @@ import {
   getCreatorLevelProgress, getNextLevel, computeCreatorLevel,
   getUserPlaylists, getPlaylistTracks,
 } from '../firebase/firestore';
+import { db } from '../firebase/config';
+import { collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useAuth } from '../context/AuthContext';
 import { usePlayer } from '../context/PlayerContext';
 import { upsertUserProfile } from '../firebase/auth';
@@ -20,8 +22,10 @@ import MomentumArrow from '../components/common/MomentumArrow';
 import {
   Music, Upload, Heart, PlayCircle, Edit3,
   Check, X, BarChart2, Zap, Star, Camera, Settings,
-  Users, TrendingUp, Award, Calendar, Crown, ListMusic,
+  Users, TrendingUp, Award, Calendar, Crown, ListMusic, MessageSquare
 } from 'lucide-react';
+import Cropper from 'react-easy-crop';
+import { getCroppedImg } from '../utils/canvasUtils';
 import toast from 'react-hot-toast';
 import '../styles/pages.css';
 import '../styles/components.css';
@@ -89,6 +93,17 @@ export default function Profile() {
   const [editAvatarUrl, setEditAvatarUrl]     = useState('');
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [savingProfile, setSavingProfile]     = useState(false);
+
+  // Avatar Cropping states
+  const [cropImageSrc, setCropImageSrc] = useState(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  const [showCropModal, setShowCropModal] = useState(false);
+
+  const onCropComplete = useCallback((croppedArea, croppedAreaPixels) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  }, []);
 
   const isOwn = user?.uid === uid;
 
@@ -202,6 +217,34 @@ export default function Profile() {
     if (isOwn) refreshProfile();
   };
 
+  const handleMessageClick = async () => {
+    if (!user) {
+      toast.error('Please log in to send a message');
+      navigate('/login');
+      return;
+    }
+    try {
+      const q = query(collection(db, 'chats'), where('participants', 'array-contains', user.uid));
+      const snap = await getDocs(q);
+      const existingChat = snap.docs.find(d => d.data().participants.includes(uid));
+      
+      if (existingChat) {
+        navigate(`/messages/${existingChat.id}`);
+      } else {
+        const newChatRef = await addDoc(collection(db, 'chats'), {
+          participants: [user.uid, uid],
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          lastMessage: ''
+        });
+        navigate(`/messages/${newChatRef.id}`);
+      }
+    } catch (err) {
+      toast.error('Failed to start conversation');
+      console.error(err);
+    }
+  };
+
   // ── Avatar Change ───────────────────────────────────────────────────────
   const handleAvatarChange = async (e) => {
     const file = e.target.files[0];
@@ -210,8 +253,21 @@ export default function Profile() {
       toast.error('Image size must be less than 5MB');
       return;
     }
-    setUploadingAvatar(true);
+    const reader = new FileReader();
+    reader.onload = () => {
+      setCropImageSrc(reader.result);
+      setShowCropModal(true);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = ''; // Reset input
+  };
+
+  const handleCropSave = async () => {
     try {
+      setUploadingAvatar(true);
+      setShowCropModal(false);
+      const croppedImageBlob = await getCroppedImg(cropImageSrc, croppedAreaPixels);
+      const file = new File([croppedImageBlob], "avatar.jpg", { type: "image/jpeg" });
       const res = await uploadCoverImage(file);
       setEditAvatarUrl(res.url);
       toast.success('Avatar photo uploaded!');
@@ -220,6 +276,7 @@ export default function Profile() {
       toast.error(err.message || 'Avatar upload failed');
     } finally {
       setUploadingAvatar(false);
+      setCropImageSrc(null);
     }
   };
 
@@ -474,6 +531,10 @@ export default function Profile() {
                 targetUid={uid}
                 onFollowChange={(delta) => setFollowerCount((c) => Math.max(0, c + delta))}
               />
+              <button className="btn btn-outline" onClick={handleMessageClick} id="profile-message-btn">
+                <MessageSquare size={15} />
+                Message
+              </button>
               {tracks.length > 0 && (
                 <button
                   className="btn btn-ghost"
@@ -808,6 +869,54 @@ export default function Profile() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Crop Modal ─────────────────────────────────────────── */}
+      {showCropModal && (
+        <div className="modal-overlay">
+          <div className="modal-card" style={{ maxWidth: '500px', display: 'flex', flexDirection: 'column' }}>
+            <div className="modal-header">
+              <h2 className="modal-title">Crop Profile Picture</h2>
+              <button className="modal-close-btn" onClick={() => setShowCropModal(false)}>
+                <X size={18} />
+              </button>
+            </div>
+            <div style={{ position: 'relative', width: '100%', height: '300px', background: '#333' }}>
+              <Cropper
+                image={cropImageSrc}
+                crop={crop}
+                zoom={zoom}
+                aspect={1}
+                cropShape="round"
+                showGrid={false}
+                onCropChange={setCrop}
+                onCropComplete={onCropComplete}
+                onZoomChange={setZoom}
+              />
+            </div>
+            <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Zoom</label>
+              <input
+                type="range"
+                value={zoom}
+                min={1}
+                max={3}
+                step={0.1}
+                aria-labelledby="Zoom"
+                onChange={(e) => setZoom(e.target.value)}
+                style={{ width: '100%' }}
+              />
+            </div>
+            <div className="modal-actions" style={{ padding: '16px', borderTop: '1px solid var(--border)' }}>
+              <button className="btn btn-ghost" onClick={() => setShowCropModal(false)}>
+                Cancel
+              </button>
+              <button className="btn btn-primary" onClick={handleCropSave} disabled={uploadingAvatar}>
+                {uploadingAvatar ? 'Uploading...' : 'Save Picture'}
+              </button>
+            </div>
           </div>
         </div>
       )}

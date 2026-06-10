@@ -25,12 +25,19 @@ export default function OpportunitiesPage() {
   const navigate = useNavigate();
   const [opportunities, setOpportunities] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    getOpportunities(20).then((opps) => {
-      setOpportunities(opps);
-      setLoading(false);
-    });
+    getOpportunities(20)
+      .then((opps) => {
+        setOpportunities(opps);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error('Failed to load opportunities:', err);
+        setError(true);
+        setLoading(false);
+      });
   }, []);
 
   return (
@@ -46,6 +53,15 @@ export default function OpportunitiesPage() {
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="opp-card skeleton-card" style={{ height: 200, opacity: 1 - i * 0.15 }} />
           ))}
+        </div>
+      ) : error ? (
+        <div className="empty-state">
+          <div className="empty-state-icon">⚠️</div>
+          <h3>Failed to Load Opportunities</h3>
+          <p>Please check the console for missing composite indexes or try again later.</p>
+          <button className="btn btn-primary" onClick={() => window.location.reload()}>
+            Retry
+          </button>
         </div>
       ) : opportunities.length === 0 ? (
         <div className="empty-state">

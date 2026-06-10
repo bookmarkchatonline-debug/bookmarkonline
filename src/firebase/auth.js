@@ -30,7 +30,7 @@ export async function upsertUserProfile(uid, data, retries = 2) {
 }
 
 /** Create user with email/password and write Firestore profile doc */
-export async function registerWithEmail(email, password, username) {
+export async function registerWithEmail(email, password, username, role = 'artist') {
   const cred = await createUserWithEmailAndPassword(auth, email, password);
   // Update Firebase Auth display name
   await updateProfile(cred.user, { displayName: username });
@@ -41,7 +41,7 @@ export async function registerWithEmail(email, password, username) {
     email,
     avatarUrl: null,
     bio: '',
-    role: 'artist',
+    role,
     plan: 'free',
     creatorLevel: 'Rising Artist',
     stats: {
@@ -63,7 +63,7 @@ export async function loginWithEmail(email, password) {
 }
 
 /** Sign in with Google — creates Firestore profile if first time */
-export async function loginWithGoogle() {
+export async function loginWithGoogle(role = 'artist') {
   const cred = await signInWithPopup(auth, googleProvider);
   const userRef = doc(db, 'users', cred.user.uid);
   const snap = await getDoc(userRef);
@@ -74,7 +74,7 @@ export async function loginWithGoogle() {
       email: cred.user.email,
       avatarUrl: cred.user.photoURL || null,
       bio: '',
-      role: 'artist',
+      role,
       plan: 'free',
       creatorLevel: 'Rising Artist',
       stats: {

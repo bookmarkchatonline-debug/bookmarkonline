@@ -26,10 +26,8 @@ export default function Sidebar({ onClose, isOpen, onOpenSettings }) {
     <aside className={`sidebar${isOpen ? ' open' : ''}`} onClick={onClose}>
       {/* Logo */}
       <div className="sidebar-logo">
-        <div className="logo-mark">
-          BOOKMARK<span>CHAT</span>
-        </div>
-        <div className="logo-tagline">The Home for Rising Artists</div>
+        <img src="/mainlogo2.png" alt="BookmarkChat Logo" style={{ height: '40px', width: 'auto', objectFit: 'contain' }} />
+        <div className="logo-tagline" style={{ marginTop: '8px' }}>The Home for Rising Artists</div>
       </div>
 
       <nav className="sidebar-nav">

@@ -5,33 +5,35 @@ const AUDIO_PRESET = import.meta.env.VITE_CLOUDINARY_AUDIO_PRESET; // 'songsuplo
 const IMAGE_PRESET = import.meta.env.VITE_CLOUDINARY_IMAGE_PRESET; // 'songsupload'
 
 /**
- * Validate audio duration client-side via Web Audio API.
- * Rejects clips shorter than 5 s or longer than 60 s.
+ * Validate media duration client-side.
+ * Rejects clips shorter than 5 s or longer than 180 s. Enforces 100MB limit.
  */
-export async function validateAudioDuration(file) {
+export async function validateMediaDuration(file) {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      audioCtx.decodeAudioData(
-        e.target.result,
-        (buffer) => {
-          audioCtx.close();
-          const duration = buffer.duration;
-          if (duration < 5) {
-            reject(new Error('Audio clip must be at least 5 seconds long.'));
-          } else if (duration > 60) {
-            reject(new Error(`Audio clip is ${Math.round(duration)}s — max allowed is 60 seconds.`));
-          } else {
-            resolve(duration);
-          }
-        },
-        () => {
-          reject(new Error('Could not decode audio file. Please use MP3, WAV, or AAC.'));
-        }
-      );
+    if (file.size > 100 * 1024 * 1024) {
+      return reject(new Error('File exceeds the 100MB limit.'));
+    }
+
+    const isVideo = file.type.startsWith('video/');
+    const mediaElement = document.createElement(isVideo ? 'video' : 'audio');
+    
+    mediaElement.preload = 'metadata';
+    mediaElement.onloadedmetadata = () => {
+      URL.revokeObjectURL(mediaElement.src);
+      const duration = mediaElement.duration;
+      if (duration < 5) {
+        reject(new Error(`${isVideo ? 'Video' : 'Audio'} must be at least 5 seconds long.`));
+      } else if (duration > 180) { 
+        reject(new Error(`File is ${Math.round(duration)}s — max allowed is 180 seconds.`));
+      } else {
+        resolve(duration);
+      }
     };
-    reader.readAsArrayBuffer(file);
+    mediaElement.onerror = () => {
+      URL.revokeObjectURL(mediaElement.src);
+      reject(new Error('Could not read media file. Please check the format.'));
+    };
+    mediaElement.src = URL.createObjectURL(file);
   });
 }
 

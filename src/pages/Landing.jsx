@@ -111,8 +111,7 @@ export default function Landing() {
       <nav className="landing-nav">
         <div className="landing-nav-inner">
           <div className="landing-logo">
-            <div className="landing-logo-mark">B</div>
-            <span>Bookmark<span className="logo-accent">Chat</span></span>
+            <img src="/mainlogo2.png" alt="BookmarkChat Logo" style={{ height: '40px', width: 'auto', objectFit: 'contain' }} />
           </div>
           <div className="landing-nav-actions">
             <button className="landing-nav-link" onClick={() => navigate('/login')}>Sign In</button>
@@ -497,9 +496,8 @@ export default function Landing() {
       {/* ─── Footer ───────────────────────────────────────────────────────── */}
       <footer className="landing-footer">
         <div className="landing-footer-inner">
-          <div className="landing-logo" style={{ fontSize: '1rem' }}>
-            <div className="landing-logo-mark" style={{ width: 28, height: 28, fontSize: '0.85rem' }}>B</div>
-            <span>Bookmark<span className="logo-accent">Chat</span></span>
+          <div className="landing-logo">
+            <img src="/mainlogo2.png" alt="BookmarkChat Logo" style={{ height: '30px', width: 'auto', objectFit: 'contain' }} />
           </div>
           <p className="footer-tagline">The home for rising independent artists.</p>
           
