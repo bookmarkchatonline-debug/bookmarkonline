@@ -567,6 +567,7 @@ export function calculateEngagementScore(stats) {
 export async function getTopCreators(limitCount = 6) {
   const q = query(
     collection(db, 'users'),
+    where('role', '==', 'artist'),
     orderBy('stats.totalLikes', 'desc'),
     limit(limitCount)
   );

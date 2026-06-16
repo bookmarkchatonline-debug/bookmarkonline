@@ -54,7 +54,7 @@ export default function AdminOpportunities() {
         isUrgent,
         link,
         createdAt: serverTimestamp(),
-        active: true
+        isActive: true
       });
       
       toast.success('Opportunity created!');
