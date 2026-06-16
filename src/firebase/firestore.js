@@ -136,15 +136,15 @@ export async function getUserTracks(uid) {
 
 /** Search tracks by title prefix or tag */
 export async function searchTracks(term) {
+  // Simplified query for Firebase free plan
   const q = query(
     collection(db, 'tracks'),
     where('isPublic', '==', true),
-    orderBy('likes', 'desc'),
     limit(200)
   );
   const snap = await getDocs(q);
   const lower = term.toLowerCase().trim();
-  return snap.docs
+  const filtered = snap.docs
     .map((d) => ({ id: d.id, ...d.data() }))
     .filter((t) => {
       const inTitle = t.title?.toLowerCase().includes(lower);
@@ -152,6 +152,9 @@ export async function searchTracks(term) {
       const inArtist = t.username?.toLowerCase().includes(lower);
       return inTitle || inTags || inArtist;
     });
+  // Sort by likes on client side
+  filtered.sort((a, b) => (b.likes || 0) - (a.likes || 0));
+  return filtered;
 }
 
 /** Delete a track */
@@ -173,11 +176,11 @@ export async function deleteTrack(trackId, uid) {
 /** Get rising tracks — tracks uploaded in last 7 days with most likes */
 export async function getRisingTracks(limitCount = 6) {
   const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  // Simplified query for Firebase free plan
   const q = query(
     collection(db, 'tracks'),
     where('isPublic', '==', true),
     where('createdAt', '>=', cutoff),
-    orderBy('createdAt', 'desc'),
     limit(100)
   );
   const snap = await getDocs(q);
@@ -363,17 +366,19 @@ export async function updateUserProfile(uid, fields) {
 
 /** Search users/artists by username */
 export async function searchUsers(term, limitCount = 20) {
+  // Simplified query for Firebase free plan (no orderBy needed)
   const q = query(
     collection(db, 'users'),
-    orderBy('stats.totalLikes', 'desc'),
     limit(200)
   );
   const snap = await getDocs(q);
   const lower = term.toLowerCase().trim();
-  return snap.docs
+  const filtered = snap.docs
     .map((d) => ({ uid: d.id, ...d.data() }))
-    .filter((u) => u.username?.toLowerCase().includes(lower))
-    .slice(0, limitCount);
+    .filter((u) => u.username?.toLowerCase().includes(lower));
+  // Sort by total likes on client side
+  filtered.sort((a, b) => (b.stats?.totalLikes || 0) - (a.stats?.totalLikes || 0));
+  return filtered.slice(0, limitCount);
 }
 
 // ─── Follow System ──────────────────────────────────────────────────────────
@@ -565,14 +570,17 @@ export function calculateEngagementScore(stats) {
 
 /** Top creators by total likes (role=artist) */
 export async function getTopCreators(limitCount = 6) {
+  // Simplified query for Firebase free plan (no composite index needed)
   const q = query(
     collection(db, 'users'),
     where('role', '==', 'artist'),
-    orderBy('stats.totalLikes', 'desc'),
-    limit(limitCount)
+    limit(50)
   );
   const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ uid: d.id, ...d.data() }));
+  const artists = snap.docs.map((d) => ({ uid: d.id, ...d.data() }));
+  // Sort by total likes on client side
+  artists.sort((a, b) => (b.stats?.totalLikes || 0) - (a.stats?.totalLikes || 0));
+  return artists.slice(0, limitCount);
 }
 
 /** Get all artists for directory/rankings */
@@ -649,14 +657,21 @@ export async function getWeeklyWinners(limitCount = 5) {
 
 /** Opportunities for creators */
 export async function getOpportunities(limitCount = 10) {
+  // Simplified query for Firebase free plan (no composite index needed)
   const q = query(
     collection(db, 'opportunities'),
     where('isActive', '==', true),
-    orderBy('deadline', 'asc'),
-    limit(limitCount)
+    limit(50)
   );
   const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  // Sort by deadline on client side
+  const opportunities = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  opportunities.sort((a, b) => {
+    const dateA = typeof a.deadline === 'string' ? new Date(a.deadline) : a.deadline?.seconds ? new Date(a.deadline.seconds * 1000) : new Date(0);
+    const dateB = typeof b.deadline === 'string' ? new Date(b.deadline) : b.deadline?.seconds ? new Date(b.deadline.seconds * 1000) : new Date(0);
+    return dateA - dateB;
+  });
+  return opportunities.slice(0, limitCount);
 }
 
 /** Get all opportunities including inactive */
@@ -684,14 +699,21 @@ export async function addNotification(uid, data) {
 
 /** Get notifications for a user */
 export async function getNotifications(uid, limitCount = 20) {
+  // Simplified query for Firebase free plan
   const q = query(
     collection(db, 'notifications'),
     where('uid', '==', uid),
-    orderBy('createdAt', 'desc'),
-    limit(limitCount)
+    limit(limitCount * 2)
   );
   const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  const notifications = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  // Sort by createdAt on client side
+  notifications.sort((a, b) => {
+    const timeA = a.createdAt?.seconds || 0;
+    const timeB = b.createdAt?.seconds || 0;
+    return timeB - timeA;
+  });
+  return notifications.slice(0, limitCount);
 }
 
 /** Get unread notification count */
