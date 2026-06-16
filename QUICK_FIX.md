@@ -9,7 +9,7 @@
    ```
 
 2. **Click the link** (or paste in browser)
-
+fix the 
 3. **Click "Create Index"** button
 
 4. **Wait 1-2 minutes** for index to build
