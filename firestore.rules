@@ -136,6 +136,9 @@ service cloud.firestore {
         allow create: if request.auth != null 
           && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants
           && request.resource.data.senderId == request.auth.uid;
+        allow update: if request.auth != null 
+          && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
       }
     }
 

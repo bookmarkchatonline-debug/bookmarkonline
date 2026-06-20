@@ -1,12 +1,14 @@
 // src/components/track/TrackCard.jsx
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Play, Pause, Music, Flame, TrendingUp, Trash2 } from 'lucide-react';
+import { Play, Pause, Music, Flame, TrendingUp, Trash2, Share2 } from 'lucide-react';
 import { usePlayer } from '../../context/PlayerContext';
 import { useAuth } from '../../context/AuthContext';
 import { deleteTrack } from '../../firebase/firestore';
 import toast from 'react-hot-toast';
 import LikeButton from './LikeButton';
 import CreatorBadge from '../common/CreatorBadge';
+import ShareToChatModal from './ShareToChatModal';
 import '../../styles/components.css';
 
 function isNewTrack(createdAt) {
@@ -23,6 +25,7 @@ export default function TrackCard({ track, rank, showRank = false, onTrackDelete
   const showPlaying = isCurrent && isPlaying;
   const isNew = isNewTrack(track.createdAt);
   const isOwner = user?.uid === track.uid;
+  const [shareModalOpen, setShareModalOpen] = useState(false);
 
   const handlePlayPause = (e) => {
     e.stopPropagation();
@@ -110,6 +113,14 @@ export default function TrackCard({ track, rank, showRank = false, onTrackDelete
 
       {/* Actions */}
       <div className="track-actions" onClick={(e) => e.stopPropagation()} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <button 
+          className="btn-icon" 
+          onClick={() => setShareModalOpen(true)}
+          title="Share to Chat"
+          style={{ color: 'var(--text-muted)' }}
+        >
+          <Share2 size={16} />
+        </button>
         <LikeButton trackId={track.id} initialLikes={track.likes || 0} />
         {isOwner && (
           <button 
@@ -122,6 +133,12 @@ export default function TrackCard({ track, rank, showRank = false, onTrackDelete
           </button>
         )}
       </div>
+
+      <ShareToChatModal 
+        isOpen={shareModalOpen} 
+        onClose={() => setShareModalOpen(false)} 
+        track={track} 
+      />
     </div>
   );
 }

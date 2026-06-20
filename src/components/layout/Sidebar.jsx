@@ -13,6 +13,7 @@ const navItems = [
   { to: '/rankings',      icon: BarChart2,     label: 'Rankings' },
   { to: '/feed',          icon: MessageCircle, label: 'Feed' },
   { to: '/community',     icon: MessageSquare, label: 'Community' },
+  { to: '/messages',      icon: MessageCircle, label: 'Messages' },
   { to: '/artists',       icon: Users,         label: 'Artists' },
   { to: '/awards',        icon: Trophy,        label: 'Awards' },
   { to: '/opportunities', icon: Calendar,      label: 'Opportunities' },
