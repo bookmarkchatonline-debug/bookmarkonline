@@ -30,8 +30,7 @@ export default function Messages() {
 
     const q = query(
       collection(db, 'chats'),
-      where('participants', 'array-contains', user.uid),
-      orderBy('updatedAt', 'desc')
+      where('participants', 'array-contains', user.uid)
     );
 
     const unsub = onSnapshot(q, async (snap) => {
@@ -47,6 +46,8 @@ export default function Messages() {
         }
         return { id: d.id, ...data, otherUser, otherUid };
       }));
+      
+      chatsData.sort((a, b) => (b.updatedAt?.toMillis() || 0) - (a.updatedAt?.toMillis() || 0));
       setChats(chatsData);
       setLoadingChats(false);
     });
