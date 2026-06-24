@@ -1,10 +1,11 @@
 // src/pages/Upload.jsx
 import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Image, Globe, X, Tag } from 'lucide-react';
+import { ArrowRight, Image, Globe, X, Tag, Video, Music } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { uploadAudio, uploadCoverImage } from '../cloudinary/upload';
-import { addTrack, getUserTracks } from '../firebase/firestore';
+import { uploadAudio, uploadCoverImage, uploadToCloudinary } from '../cloudinary/upload';
+import { addTrack, getUserTracks, getUserProfile } from '../firebase/firestore';
+import { addVideo, getUserVideos } from '../firebase/videos';
 import AudioDropzone from '../components/upload/AudioDropzone';
 import toast from 'react-hot-toast';
 import '../styles/pages.css';
@@ -14,17 +15,22 @@ export default function Upload() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
 
+  const [uploadType, setUploadType] = useState('audio'); // 'audio' or 'video'
   const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
   const [tagInput, setTagInput] = useState('');
   const [tags, setTags] = useState([]);
   const [audioFile, setAudioFile] = useState(null);
   const [audioDuration, setAudioDuration] = useState(null);
+  const [videoFile, setVideoFile] = useState(null);
+  const [videoPreview, setVideoPreview] = useState(null);
   const [coverFile, setCoverFile] = useState(null);
   const [coverPreview, setCoverPreview] = useState('');
   const [audioProgress, setAudioProgress] = useState(0);
   const [imageProgress, setImageProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [trackCount, setTrackCount] = useState(0);
+  const [videoCount, setVideoCount] = useState(0);
   const [loadingCount, setLoadingCount] = useState(true);
 
   const isFreePlan = (profile?.plan || 'free') === 'free';
@@ -34,10 +40,14 @@ export default function Upload() {
   useEffect(() => {
     if (!user) return () => {};
     let active = true;
-    getUserTracks(user.uid)
-      .then((tracks) => {
+    Promise.all([
+      getUserTracks(user.uid),
+      getUserVideos(user.uid)
+    ])
+      .then(([tracks, videos]) => {
         if (active) {
           setTrackCount(tracks.length);
+          setVideoCount(videos.length);
           setLoadingCount(false);
         }
       })
@@ -51,6 +61,25 @@ export default function Upload() {
     setAudioFile(file);
     setAudioDuration(dur);
   }, []);
+
+  const handleVideoChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('video/')) {
+      toast.error('Please select a video file');
+      return;
+    }
+
+    if (file.size > 100 * 1024 * 1024) {
+      toast.error('Video file too large (max 100MB)');
+      return;
+    }
+
+    setVideoFile(file);
+    const url = URL.createObjectURL(file);
+    setVideoPreview(url);
+  };
 
   // Redirect if not logged in
   useEffect(() => {
@@ -88,41 +117,80 @@ export default function Upload() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!audioFile) { toast.error('Please select an audio file'); return; }
-    if (!title.trim()) { toast.error('Please enter a track title'); return; }
-    // Client-side quota check (works without Cloud Functions)
-    if (isFreePlan && trackCount >= freeUploadLimit) {
-      toast.error('Free plan limit reached. Upgrade to upload more tracks.');
-      return;
+    
+    if (uploadType === 'audio') {
+      if (!audioFile) { toast.error('Please select an audio file'); return; }
+      if (!title.trim()) { toast.error('Please enter a track title'); return; }
+      // Client-side quota check
+      if (isFreePlan && trackCount >= freeUploadLimit) {
+        toast.error('Free plan limit reached. Upgrade to upload more tracks.');
+        return;
+      }
+    } else {
+      if (!videoFile) { toast.error('Please select a video file'); return; }
+      if (!title.trim()) { toast.error('Please enter a video title'); return; }
     }
 
     setUploading(true);
     try {
-      // Upload audio
-      const { url: audioUrl, duration } = await uploadAudio(audioFile, setAudioProgress);
+      if (uploadType === 'audio') {
+        // Upload audio
+        const { url: audioUrl, duration } = await uploadAudio(audioFile, setAudioProgress);
 
-      // Upload cover if provided
-      let coverUrl = null;
-      if (coverFile) {
-        const res = await uploadCoverImage(coverFile, setImageProgress);
-        coverUrl = res.url;
+        // Upload cover if provided
+        let coverUrl = null;
+        if (coverFile) {
+          const res = await uploadCoverImage(coverFile, setImageProgress);
+          coverUrl = res.url;
+        }
+
+        // Save to Firestore
+        const trackId = await addTrack({
+          title: title.trim(),
+          tags,
+          audioUrl,
+          coverUrl,
+          duration,
+          uid: user.uid,
+          username: profile?.username || user.displayName || user.email.split('@')[0],
+          avatarUrl: profile?.avatarUrl || user.photoURL || null,
+        });
+
+        toast.success('🎵 Snippet published!');
+        setTrackCount((prev) => prev + 1);
+        navigate(`/track/${trackId}`);
+      } else {
+        // Upload video
+        const videoUrl = await uploadToCloudinary(videoFile, 'video', setAudioProgress);
+        
+        // Upload thumbnail if provided
+        let thumbnailUrl = null;
+        if (coverFile) {
+          thumbnailUrl = await uploadToCloudinary(coverFile, 'image', setImageProgress);
+        }
+
+        // Get user profile
+        const userProfile = await getUserProfile(user.uid);
+
+        // Create video document
+        const videoData = {
+          uid: user.uid,
+          username: userProfile?.username || user.displayName || user.email.split('@')[0],
+          avatarUrl: userProfile?.avatarUrl || user.photoURL || null,
+          title: title.trim(),
+          description: description.trim(),
+          videoUrl,
+          thumbnailUrl,
+          tags,
+          captions: [],
+          duration: 0,
+        };
+
+        const videoId = await addVideo(videoData);
+        toast.success('🎬 Video published!');
+        setVideoCount((prev) => prev + 1);
+        navigate(`/video/${videoId}`);
       }
-
-      // Save to Firestore
-      const trackId = await addTrack({
-        title: title.trim(),
-        tags,
-        audioUrl,
-        coverUrl,
-        duration,
-        uid: user.uid,
-        username: profile?.username || user.displayName || user.email.split('@')[0],
-        avatarUrl: profile?.avatarUrl || user.photoURL || null,
-      });
-
-      toast.success('🎵 Snippet published!');
-      setTrackCount((prev) => prev + 1);
-      navigate(`/track/${trackId}`);
     } catch (err) {
       toast.error(err.message || 'Upload failed. Please try again.');
     } finally {

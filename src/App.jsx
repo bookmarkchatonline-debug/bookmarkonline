@@ -33,10 +33,13 @@ import History from './pages/History';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
 import About from './pages/About';
+import Videos from './pages/Videos';
+import VideoPage from './pages/VideoPage';
+import VideoUpload from './pages/VideoUpload';
 import { useAuth } from './context/AuthContext';
 
 // Pages that use the full app shell (sidebar + topbar + player)
-const SHELL_ROUTES = ['/', '/discover', '/rankings', '/upload', '/profile', '/track', '/feed', '/community', '/messages', '/awards', '/artists', '/opportunities', '/upgrade', '/history'];
+const SHELL_ROUTES = ['/', '/discover', '/rankings', '/upload', '/profile', '/track', '/feed', '/community', '/messages', '/awards', '/artists', '/opportunities', '/upgrade', '/history', '/videos', '/video'];
 
 
 const NON_SHELL_ROUTES = ['/login', '/register', '/privacy', '/terms', '/about'];
@@ -169,6 +172,9 @@ export default function App() {
             <Route path="/history" element={<History />} />
             <Route path="/profile/:uid" element={<Profile />} />
             <Route path="/track/:id" element={<TrackPage />} />
+            <Route path="/videos" element={<Videos />} />
+            <Route path="/video/:id" element={<VideoPage />} />
+            <Route path="/video-upload" element={<VideoUpload />} />
             {/* fallback */}
             <Route path="*" element={<Home />} />
           </Routes>

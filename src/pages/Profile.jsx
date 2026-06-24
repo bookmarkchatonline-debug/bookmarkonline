@@ -7,6 +7,8 @@ import {
   getCreatorLevelProgress, getNextLevel, computeCreatorLevel,
   getUserPlaylists, getPlaylistTracks,
 } from '../firebase/firestore';
+import { getUserVideos } from '../firebase/videos';
+import VideoCard from '../components/video/VideoCard';
 import { db } from '../firebase/config';
 import { collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useAuth } from '../context/AuthContext';
@@ -22,7 +24,7 @@ import MomentumArrow from '../components/common/MomentumArrow';
 import {
   Music, Upload, Heart, PlayCircle, Edit3,
   Check, X, BarChart2, Zap, Star, Camera, Settings,
-  Users, TrendingUp, Award, Calendar, Crown, ListMusic, MessageSquare
+  Users, TrendingUp, Award, Calendar, Crown, ListMusic, MessageSquare, Video
 } from 'lucide-react';
 import Cropper from 'react-easy-crop';
 import { getCroppedImg } from '../utils/canvasUtils';
@@ -85,6 +87,8 @@ export default function Profile() {
   const [activePlaylistId, setActivePlaylistId] = useState(null);
   const [activePlaylistTracks, setActivePlaylistTracks] = useState([]);
   const [activePlaylistLoading, setActivePlaylistLoading] = useState(false);
+  const [videos, setVideos] = useState([]);
+  const [videosLoading, setVideosLoading] = useState(false);
 
   // Edit profile states
   const [showEditModal, setShowEditModal]     = useState(false);
@@ -182,6 +186,19 @@ export default function Profile() {
       setPlaylistsLoading(false);
     }
   }, [uid, playlists.length]);
+
+  // ── Load videos lazily ───────────────────────────────────────────────
+  const handleTabVideos = useCallback(async () => {
+    setTab('videos');
+    if (videos.length > 0) return;
+    setVideosLoading(true);
+    try {
+      const v = await getUserVideos(uid);
+      setVideos(v);
+    } finally {
+      setVideosLoading(false);
+    }
+  }, [uid, videos.length]);
 
   const handlePlayPlaylist = async (playlistId) => {
     try {
@@ -653,6 +670,9 @@ export default function Profile() {
         <Tab active={tab === 'popular'} onClick={() => setTab('popular')}>
           Most Liked
         </Tab>
+        <Tab active={tab === 'videos'} onClick={handleTabVideos} count={videos.length || undefined}>
+          Videos
+        </Tab>
         <Tab active={tab === 'playlists'} onClick={handleTabPlaylists}>
           Playlists
         </Tab>
@@ -662,7 +682,7 @@ export default function Profile() {
           </Tab>
         )}
 
-        {tab !== 'liked' && tab !== 'playlists' && tracks.length > 0 && (
+        {tab !== 'liked' && tab !== 'playlists' && tab !== 'videos' && tracks.length > 0 && (
           <button
             className="play-all-btn"
             onClick={() => playQueue(displayedTracks, 0)}
@@ -676,7 +696,32 @@ export default function Profile() {
       </div>
 
       {/* ── Track List ──────────────────────────────────────────────────── */}
-      {tab === 'playlists' ? (
+      {tab === 'videos' ? (
+        videosLoading ? (
+          <div className="videos-grid">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} style={{ height: 200, background: 'var(--bg-card)', borderRadius: 'var(--radius-md)', opacity: 1 - i * 0.2 }} />
+            ))}
+          </div>
+        ) : videos.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-state-icon"><Video size={40} opacity={0.3} /></div>
+            <p>{isOwn ? "You haven't uploaded any videos yet." : "No videos yet."}</p>
+            {isOwn && (
+              <button className="btn-primary" onClick={() => navigate('/video-upload')}>
+                <Upload size={16} />
+                Upload Video
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="videos-grid">
+            {videos.map((video) => (
+              <VideoCard key={video.id} video={video} onVideoDeleted={(id) => setVideos(prev => prev.filter(v => v.id !== id))} />
+            ))}
+          </div>
+        )
+      ) : tab === 'playlists' ? (
         playlistsLoading ? (
           <div className="tracks-grid">
             {Array.from({ length: 4 }).map((_, i) => (

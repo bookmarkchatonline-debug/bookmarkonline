@@ -1,7 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   Home, Compass, BarChart2, Upload, User, Music, X, Star, Calendar,
-  MessageCircle, Trophy, Users, Zap, Crown, Settings, MessageSquare, Clock, Lock, Activity
+  MessageCircle, Trophy, Users, Zap, Crown, Settings, MessageSquare, Clock, Lock, Activity, Video
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import CreatorBadge from '../common/CreatorBadge';
@@ -11,6 +11,7 @@ const navItems = [
   { to: '/',              icon: Home,          label: 'Home' },
   { to: '/discover',      icon: Compass,       label: 'Discover' },
   { to: '/rankings',      icon: BarChart2,     label: 'Rankings' },
+  { to: '/videos',        icon: Video,         label: 'Videos' },
   { to: '/feed',          icon: MessageCircle, label: 'Feed' },
   { to: '/community',     icon: MessageSquare, label: 'Community' },
   { to: '/messages',      icon: MessageCircle, label: 'Messages' },
@@ -74,7 +75,14 @@ export default function Sidebar({ onClose, isOpen, onOpenSettings }) {
               className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
             >
               <Upload className="nav-icon" size={18} />
-              Upload
+              Upload Music
+            </NavLink>
+            <NavLink
+              to="/video-upload"
+              className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+            >
+              <Video className="nav-icon" size={18} />
+              Upload Video
             </NavLink>
           </>
         ) : (

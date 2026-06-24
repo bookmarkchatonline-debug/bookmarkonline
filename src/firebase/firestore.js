@@ -180,12 +180,16 @@ export async function getRisingTracks(limitCount = 6) {
   const q = query(
     collection(db, 'tracks'),
     where('isPublic', '==', true),
-    where('createdAt', '>=', cutoff),
     limit(100)
   );
   const snap = await getDocs(q);
+  const cutoffTime = cutoff.getTime();
   return snap.docs
     .map((d) => ({ id: d.id, ...d.data() }))
+    .filter((d) => {
+      const t = d.createdAt?.toMillis ? d.createdAt.toMillis() : (d.createdAt?.seconds ? d.createdAt.seconds * 1000 : 0);
+      return t >= cutoffTime;
+    })
     .sort((a, b) => (b.likes || 0) - (a.likes || 0))
     .slice(0, limitCount);
 }
