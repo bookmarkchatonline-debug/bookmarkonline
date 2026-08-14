@@ -3,11 +3,18 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signInWithPopup,
+  signInWithCredential,
   signOut,
   updateProfile,
+  GoogleAuthProvider,
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db, googleProvider } from './config';
+import {
+  getPendingGoogleSignInRole,
+  settleNativeGoogleSignInFailure,
+  settleNativeGoogleSignInSuccess,
+} from '../utils/webview';
 
 /**
  * Helper — write (or merge) the user profile doc in Firestore.
@@ -27,6 +34,35 @@ export async function upsertUserProfile(uid, data, retries = 2) {
       }
     }
   }
+}
+
+/**
+ * Create a Firestore users/{uid} profile on first Google sign-in.
+ * Shared by loginWithGoogle (popup) and loginWithGoogleToken (native/WebView).
+ */
+async function ensureGoogleUserProfile(user, role = 'artist') {
+  const userRef = doc(db, 'users', user.uid);
+  const snap = await getDoc(userRef);
+  if (snap.exists()) return;
+
+  await upsertUserProfile(user.uid, {
+    uid: user.uid,
+    username: user.displayName || user.email.split('@')[0],
+    email: user.email,
+    avatarUrl: user.photoURL || null,
+    bio: '',
+    role,
+    plan: 'free',
+    creatorLevel: 'Rising Artist',
+    stats: {
+      followers: 0,
+      totalLikes: 0,
+      weeklyLikes: 0,
+      uploads: 0,
+      rankDelta: 0,
+    },
+    createdAt: serverTimestamp(),
+  });
 }
 
 /** Create user with email/password and write Firestore profile doc */
@@ -62,32 +98,50 @@ export async function loginWithEmail(email, password) {
   return cred.user;
 }
 
-/** Sign in with Google — creates Firestore profile if first time */
+/** Sign in with Google (browser) — creates Firestore profile if first time */
 export async function loginWithGoogle(role = 'artist') {
   const cred = await signInWithPopup(auth, googleProvider);
-  const userRef = doc(db, 'users', cred.user.uid);
-  const snap = await getDoc(userRef);
-  if (!snap.exists()) {
-    await upsertUserProfile(cred.user.uid, {
-      uid: cred.user.uid,
-      username: cred.user.displayName || cred.user.email.split('@')[0],
-      email: cred.user.email,
-      avatarUrl: cred.user.photoURL || null,
-      bio: '',
-      role,
-      plan: 'free',
-      creatorLevel: 'Rising Artist',
-      stats: {
-        followers: 0,
-        totalLikes: 0,
-        weeklyLikes: 0,
-        uploads: 0,
-        rankDelta: 0,
-      },
-      createdAt: serverTimestamp(),
-    });
-  }
+  await ensureGoogleUserProfile(cred.user, role);
   return cred.user;
+}
+
+/**
+ * Sign in with a Google ID token from native Android/iOS Google Sign-In.
+ * Used when the app runs inside a WebView (popup OAuth is unavailable).
+ */
+export async function loginWithGoogleToken(idToken, role = 'artist') {
+  if (!idToken) {
+    throw new Error('Missing Google ID token');
+  }
+  const credential = GoogleAuthProvider.credential(idToken);
+  const cred = await signInWithCredential(auth, credential);
+  await ensureGoogleUserProfile(cred.user, role);
+  return cred.user;
+}
+
+/**
+ * Expose a global entry point for the native WebView shell.
+ * Native apps should call: window.bookmarkchatSignInWithGoogleTokens(idToken)
+ */
+export function registerNativeGoogleSignInBridge() {
+  if (typeof window === 'undefined') return;
+
+  window.bookmarkchatSignInWithGoogleTokens = async (idToken) => {
+    try {
+      const role = getPendingGoogleSignInRole();
+      const user = await loginWithGoogleToken(idToken, role);
+      settleNativeGoogleSignInSuccess(user);
+      return user;
+    } catch (err) {
+      settleNativeGoogleSignInFailure(err);
+      throw err;
+    }
+  };
+
+  // Optional: native can report cancel/failure without an idToken
+  window.bookmarkchatGoogleSignInFailed = (message) => {
+    settleNativeGoogleSignInFailure(message || 'Google Sign-In cancelled');
+  };
 }
 
 /** Sign out */

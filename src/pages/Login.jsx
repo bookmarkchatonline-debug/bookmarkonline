@@ -2,6 +2,11 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { loginWithEmail, loginWithGoogle } from '../firebase/auth';
+import {
+  hasNativeGoogleSignInBridge,
+  isNativeWebView,
+  requestNativeGoogleSignIn,
+} from '../utils/webview';
 import toast from 'react-hot-toast';
 
 export default function Login() {
@@ -28,8 +33,13 @@ export default function Login() {
 
   const handleGoogle = async () => {
     setLoading(true);
+    setError('');
     try {
-      await loginWithGoogle();
+      if (isNativeWebView() && hasNativeGoogleSignInBridge()) {
+        await requestNativeGoogleSignIn('artist');
+      } else {
+        await loginWithGoogle();
+      }
       toast.success('Welcome back!');
       navigate('/');
     } catch (err) {

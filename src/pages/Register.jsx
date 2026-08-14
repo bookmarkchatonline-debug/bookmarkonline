@@ -3,6 +3,11 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, User, ArrowRight, ArrowLeft } from 'lucide-react';
 import { registerWithEmail as register, loginWithGoogle } from '../firebase/auth';
+import {
+  hasNativeGoogleSignInBridge,
+  isNativeWebView,
+  requestNativeGoogleSignIn,
+} from '../utils/webview';
 import toast from 'react-hot-toast';
 
 export default function Register() {
@@ -42,11 +47,19 @@ export default function Register() {
   };
 
   const handleSocialLogin = async (provider) => {
+    if (provider !== 'google') return;
+    setLoading(true);
     try {
-      if (provider === 'google') await loginWithGoogle(formData.role);
+      if (isNativeWebView() && hasNativeGoogleSignInBridge()) {
+        await requestNativeGoogleSignIn(formData.role);
+      } else {
+        await loginWithGoogle(formData.role);
+      }
       navigate('/');
     } catch (err) {
-      toast.error(`Failed to sign in with ${provider}`);
+      toast.error(err.message || `Failed to sign in with ${provider}`);
+    } finally {
+      setLoading(false);
     }
   };
 
