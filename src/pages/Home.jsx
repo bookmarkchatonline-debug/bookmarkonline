@@ -46,7 +46,21 @@ export default function Home() {
       setNewestTracks(newest);
       setCreators(creats);
       setFeed(f);
-      setLatestAward(award);
+      
+      const now = new Date();
+      const getAwardDate = (a) => {
+        if (!a) return null;
+        if (a.createdAt?.toDate) return a.createdAt.toDate();
+        if (a.createdAt?.seconds) return new Date(a.createdAt.seconds * 1000);
+        if (a.createdAt) return new Date(a.createdAt);
+        return null;
+      };
+      const d = getAwardDate(award);
+      const isCurrentMonth = d
+        ? (d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear())
+        : (award?.month === now.getMonth() && award?.year === now.getFullYear());
+
+      setLatestAward(isCurrentMonth ? award : null);
       setPlatformStats(stats);
       setLoading(false);
     }).catch(err => {
@@ -222,7 +236,9 @@ export default function Home() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#facc15', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '4px' }}>
                   <Trophy size={14} /> Gold Tape Awards
                 </div>
-                <h3 style={{ fontSize: '1.2rem', margin: 0 }}>This Month's Awards</h3>
+                <h3 style={{ fontSize: '1.2rem', margin: 0 }}>
+                  {new Date().toLocaleString('default', { month: 'long' })} Awards
+                </h3>
               </div>
               <button className="btn btn-ghost btn-sm" onClick={() => navigate('/awards')}>
                 View All <ArrowRight size={14} />

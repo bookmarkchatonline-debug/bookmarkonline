@@ -27,13 +27,25 @@ service cloud.firestore {
         && request.resource.data.title is string
         && request.resource.data.title.size() > 0
         && request.resource.data.title.size() <= 80
-        // Enforce free-plan upload limit (2) by reading user's profile
+        // Enforce upload limits: free (< 3), creator_pro (< 10), gold_creator/admin (unlimited)
         && (
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('plan', 'free') != 'free'
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('plan', 'free') == 'gold_creator'
+          || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', '') == 'admin'
           || (
-            !('stats' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data)
-            || !('uploads' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.stats)
-            || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.stats.uploads < 2
+            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('plan', 'free') == 'creator_pro'
+            && (
+              !('stats' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data)
+              || !('uploads' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.stats)
+              || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.stats.uploads < 10
+            )
+          )
+          || (
+            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('plan', 'free') == 'free'
+            && (
+              !('stats' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data)
+              || !('uploads' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.stats)
+              || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.stats.uploads < 3
+            )
           )
         );
       allow update: if request.auth != null && (

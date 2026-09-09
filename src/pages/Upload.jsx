@@ -33,9 +33,14 @@ export default function Upload() {
   const [videoCount, setVideoCount] = useState(0);
   const [loadingCount, setLoadingCount] = useState(true);
 
-  const isFreePlan = (profile?.plan || 'free') === 'free';
-  const freeUploadLimit = 2;
-  const remainingUploads = isFreePlan ? Math.max(0, freeUploadLimit - trackCount) : null;
+  const userPlan = profile?.plan || 'free';
+  const isFreePlan = userPlan === 'free';
+  const isCreatorPro = userPlan === 'creator_pro';
+  const isGoldCreator = userPlan === 'gold_creator';
+
+  const songLimit = isFreePlan ? 3 : isCreatorPro ? 10 : null; // null = unlimited (Gold Creator)
+  const remainingUploads = songLimit !== null ? Math.max(0, songLimit - trackCount) : null;
+  const isLimitReached = songLimit !== null && trackCount >= songLimit;
 
   useEffect(() => {
     if (!user) return () => {};
@@ -122,8 +127,14 @@ export default function Upload() {
       if (!audioFile) { toast.error('Please select an audio file'); return; }
       if (!title.trim()) { toast.error('Please enter a track title'); return; }
       // Client-side quota check
-      if (isFreePlan && trackCount >= freeUploadLimit) {
-        toast.error('Free plan limit reached. Upgrade to upload more tracks.');
+      if (isLimitReached) {
+        if (isFreePlan) {
+          toast.error('Free plan limit reached (3 songs). Upgrade to Creator Pro or Gold Creator to upload more.');
+        } else if (isCreatorPro) {
+          toast.error('Creator Pro plan limit reached (10 songs). Upgrade to Gold Creator for unlimited uploads.');
+        } else {
+          toast.error('Upload limit reached. Upgrade your plan to upload more songs.');
+        }
         return;
       }
     } else {
@@ -209,13 +220,15 @@ export default function Upload() {
         <p>Share your latest sound bites. Upload short audio clips (15–30s) to the BookmarkChat community.</p>
         <div className="upload-plan-banner">
           <div>
-            <div className="upload-plan-title">{isFreePlan ? 'Free Artist Plan' : 'Creator Plan'}</div>
+            <div className="upload-plan-title">
+              {isFreePlan ? 'Free Artist Plan' : isCreatorPro ? 'Creator Pro Plan ($9.99)' : 'Gold Creator Plan ($24.99)'}
+            </div>
             <div className="upload-plan-sub">
               {loadingCount
                 ? 'Checking your upload slots...'
-                : isFreePlan
-                ? `${remainingUploads} of ${freeUploadLimit} uploads remaining`
-                : 'Unlimited uploads and creator tools'}
+                : songLimit !== null
+                ? `${remainingUploads} of ${songLimit} song uploads remaining`
+                : 'Unlimited song uploads and creator tools'}
             </div>
           </div>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -224,7 +237,7 @@ export default function Upload() {
                 View Uploads
               </button>
             )}
-            {isFreePlan && (
+            {(isFreePlan || (isCreatorPro && remainingUploads === 0)) && (
               <button type="button" className="btn btn-ghost btn-sm" onClick={() => navigate('/upgrade')}>
                 Upgrade
               </button>

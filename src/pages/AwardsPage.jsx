@@ -74,12 +74,40 @@ export default function AwardsPage() {
     });
   }, []);
 
-  const latestAward = awards[0] || null;
-  const pastAwards = awards.slice(1);
+  const now = new Date();
+  const currentMonthName = now.toLocaleString('default', { month: 'long' });
+  const currentYear = now.getFullYear();
+  const currentMonthYear = `${currentMonthName} ${currentYear}`;
 
-  // Map latest award categories to display
+  const getAwardDate = (award) => {
+    if (!award) return null;
+    if (award.createdAt?.toDate) return award.createdAt.toDate();
+    if (award.createdAt?.seconds) return new Date(award.createdAt.seconds * 1000);
+    if (award.createdAt) return new Date(award.createdAt);
+    return null;
+  };
+
+  const isAwardCurrentMonth = (award) => {
+    if (!award) return false;
+    if (award.month !== undefined && award.year !== undefined) {
+      return award.month === now.getMonth() && award.year === currentYear;
+    }
+    const d = getAwardDate(award);
+    if (d) {
+      return d.getMonth() === now.getMonth() && d.getFullYear() === currentYear;
+    }
+    if (award.title && award.title.toLowerCase().includes(currentMonthName.toLowerCase()) && award.title.includes(String(currentYear))) {
+      return true;
+    }
+    return false;
+  };
+
+  const currentAward = awards.find(isAwardCurrentMonth) || null;
+  const pastAwards = awards.filter((a) => a !== currentAward);
+
+  // Map current award categories to display
   const displayCategories = AWARD_CATEGORIES.map((cat) => {
-    const match = latestAward?.categories?.find((c) => c.key === cat.key || c.name === cat.name);
+    const match = currentAward?.categories?.find((c) => c.key === cat.key || c.name === cat.name);
     return { ...cat, winner: match || null };
   });
 
@@ -91,7 +119,7 @@ export default function AwardsPage() {
         <div className="awards-hero-content">
           <div className="awards-hero-badge">
             <Trophy size={18} />
-            Gold Tape Awards
+            Gold Tape Awards • {currentMonthYear}
           </div>
           <h1 className="awards-hero-title">
             Monthly Recognition for<br />
@@ -100,7 +128,7 @@ export default function AwardsPage() {
           <p className="awards-hero-sub">
             Every month, we spotlight the best creators in the community. Win a Gold Tape and level up your career.
           </p>
-          <CountdownTimer label="Next Awards In" />
+          <CountdownTimer label={`Next Awards In (${currentMonthName})`} />
         </div>
       </div>
 
@@ -110,7 +138,7 @@ export default function AwardsPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <Crown size={18} color="var(--accent)" />
             <span className="section-title">
-              {latestAward?.title || 'This Month\'s Winners'}
+              {currentAward?.title || `Gold Tape Awards - ${currentMonthYear}`}
             </span>
           </div>
         </div>
@@ -131,7 +159,7 @@ export default function AwardsPage() {
           <div className="awards-empty">
             <Trophy size={48} className="awards-empty-icon" />
             <h3>Awards Coming Soon</h3>
-            <p>Winners will be announced at the end of the month. Keep creating!</p>
+            <p>Winners for {currentMonthYear} will be announced at the end of {currentMonthName}. Keep creating!</p>
             <div className="awards-how-to-win">
               <h4>How to Win a Gold Tape</h4>
               <div className="awards-criteria-grid">

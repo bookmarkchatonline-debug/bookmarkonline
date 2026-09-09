@@ -61,8 +61,11 @@ export default function AdminAwards() {
 
     setPublishing(true);
     try {
+      const now = new Date();
       await publishGoldTapeAward({
         title,
+        month: now.getMonth(),
+        year: now.getFullYear(),
         categories: validSelections,
         status: 'published'
       });

@@ -101,15 +101,15 @@ exports.validateUploadQuota = functions.https.onCall(async (data, context) => {
   const userSnap = await userRef.get();
   const user = userSnap.exists ? userSnap.data() : {};
   const plan = user.plan || 'free';
-  const freeLimit = 3;
+  const limit = plan === 'gold_creator' || user.role === 'admin' ? null : plan === 'creator_pro' ? 10 : 3;
 
   // count tracks owned by user
   const tracksSnap = await db.collection('tracks').where('uid', '==', uid).get();
   const count = tracksSnap.size;
-  if (plan === 'free' && count >= freeLimit) {
-    return { allowed: false, remaining: 0, limit: freeLimit };
+  if (limit !== null && count >= limit) {
+    return { allowed: false, remaining: 0, limit };
   }
-  return { allowed: true, remaining: plan === 'free' ? Math.max(0, freeLimit - count) : null, limit: plan === 'free' ? freeLimit : null };
+  return { allowed: true, remaining: limit !== null ? Math.max(0, limit - count) : null, limit };
 });
 
 // Scheduled: compute weekly winners (runs daily, picks top of last 7 days)
