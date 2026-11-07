@@ -1,114 +1,145 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
-  Home, Compass, BarChart2, Upload, User, Music, X, Star, Calendar,
-  MessageCircle, Trophy, Users, Zap, Crown, Settings, MessageSquare, Clock, Lock, Activity, Video
+  Home, Compass, BarChart2, Video, Smartphone, MessageCircle, MessageSquare, 
+  Users, Trophy, Calendar, Library, Clock, Upload, User, 
+  Settings, Lock, Crown, Activity, Star, Music
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import CreatorBadge from '../common/CreatorBadge';
 import '../../styles/layout.css';
 
-const navItems = [
-  { to: '/',              icon: Home,          label: 'Home' },
-  { to: '/discover',      icon: Compass,       label: 'Discover' },
-  { to: '/rankings',      icon: BarChart2,     label: 'Rankings' },
-  { to: '/videos',        icon: Video,         label: 'Videos' },
-  { to: '/feed',          icon: MessageCircle, label: 'Feed' },
-  { to: '/community',     icon: MessageSquare, label: 'Community' },
-  { to: '/messages',      icon: MessageCircle, label: 'Messages' },
-  { to: '/artists',       icon: Users,         label: 'Artists' },
-  { to: '/awards',        icon: Trophy,        label: 'Awards' },
-  { to: '/opportunities', icon: Calendar,      label: 'Opportunities' },
-];
-
-export default function Sidebar({ onClose, isOpen, onOpenSettings }) {
+export default function Sidebar({ onOpenSettings }) {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
 
+  // Determine if user has admin access
+  const isAdmin = profile?.role === 'admin' || user?.email === 'bookmarkchatonline@gmail.com' || sessionStorage.getItem('adminAuth') === 'true';
+
   return (
-    <aside className={`sidebar${isOpen ? ' open' : ''}`} onClick={onClose}>
+    <aside className="sidebar desktop-only">
       {/* Logo */}
       <div className="sidebar-logo">
-        <img src="/mainlogo2.png" alt="BookmarkChat Logo" style={{ height: '40px', width: 'auto', objectFit: 'contain' }} />
-        <div className="logo-tagline" style={{ marginTop: '8px' }}>The Home for Rising Artists</div>
+        <div className="logo-mark">BOOKMARK<span>CHAT</span></div>
+        <div className="logo-tagline">The Home for Rising Artists</div>
       </div>
 
-      <nav className="sidebar-nav">
-        {/* Main nav */}
-        {navItems.map(({ to, icon: Icon, label }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={to === '/'}
-            className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
-          >
-            <Icon className="nav-icon" size={18} />
-            {label}
-          </NavLink>
-        ))}
+      <nav className="sidebar-nav" style={{ overflowY: 'auto' }}>
+        
+        {/* Main Navigation */}
+        <NavLink to="/" end className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
+          <Home className="nav-icon" size={20} />
+          Home
+        </NavLink>
+        <NavLink to="/discover" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
+          <Compass className="nav-icon" size={20} />
+          Explore
+        </NavLink>
+        <NavLink to="/rankings" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
+          <BarChart2 className="nav-icon" size={20} />
+          Rankings
+        </NavLink>
+        <NavLink to="/videos" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
+          <Video className="nav-icon" size={20} />
+          Videos
+        </NavLink>
+        <NavLink to="/reels" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
+          <Smartphone className="nav-icon" size={20} />
+          Reels
+        </NavLink>
 
-        {/* Library section */}
+        <div className="nav-divider" />
+
+        {/* Social & Community */}
+        <div className="nav-section-label">Community</div>
+        <NavLink to="/feed" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
+          <MessageCircle className="nav-icon" size={20} />
+          Feed
+        </NavLink>
+        <NavLink to="/community" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
+          <MessageSquare className="nav-icon" size={20} />
+          Discussions
+        </NavLink>
+        <NavLink to="/messages" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
+          <MessageCircle className="nav-icon" size={20} />
+          Messages
+        </NavLink>
+        <NavLink to="/artists" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
+          <Users className="nav-icon" size={20} />
+          Artists
+        </NavLink>
+
+        <div className="nav-divider" />
+
+        {/* Opportunities */}
+        <div className="nav-section-label">Opportunities</div>
+        <NavLink to="/awards" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
+          <Trophy className="nav-icon" size={20} />
+          Awards
+        </NavLink>
+        <NavLink to="/opportunities" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
+          <Calendar className="nav-icon" size={20} />
+          Open Calls
+        </NavLink>
+
+        <div className="nav-divider" />
+
+        {/* Your Library */}
         <div className="nav-section-label">Your Library</div>
+        <NavLink to={user ? `/library` : '/login'} className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
+          <Library className="nav-icon" size={20} />
+          Library
+        </NavLink>
+        {user && (
+          <NavLink to="/history" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
+            <Clock className="nav-icon" size={20} />
+            History
+          </NavLink>
+        )}
 
+        <div className="nav-divider" />
+
+        {/* Action / Upload */}
+        <NavLink to="/upload" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
+          <Upload className="nav-icon" size={20} />
+          Upload Music
+        </NavLink>
+        <NavLink to="/video-upload" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
+          <Video className="nav-icon" size={20} />
+          Upload Video
+        </NavLink>
+
+        <div className="nav-divider" />
+
+        {/* Profile */}
         {user ? (
-          <>
-            <NavLink
-              to={`/profile/${user.uid}`}
-              className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
-            >
-              <User className="nav-icon" size={18} />
-              Profile
-              {profile?.creatorLevel && (
-                <span className="nav-badge-inline">
-                  <CreatorBadge level={profile.creatorLevel} size="sm" showIcon={false} />
-                </span>
-              )}
-            </NavLink>
-            <NavLink
-              to="/history"
-              className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
-            >
-              <Clock className="nav-icon" size={18} />
-              Listen History
-            </NavLink>
-            <NavLink
-              to="/upload"
-              className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
-            >
-              <Upload className="nav-icon" size={18} />
-              Upload Music
-            </NavLink>
-            <NavLink
-              to="/video-upload"
-              className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
-            >
-              <Video className="nav-icon" size={18} />
-              Upload Video
-            </NavLink>
-          </>
+          <NavLink to={`/profile/${user.uid}`} className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
+            <User className="nav-icon" size={20} />
+            Profile
+            {profile?.creatorLevel && (
+              <span className="nav-badge-inline">
+                <CreatorBadge level={profile.creatorLevel} size="sm" showIcon={false} />
+              </span>
+            )}
+          </NavLink>
         ) : (
-          <div
-            className="nav-item"
-            onClick={() => navigate('/login')}
-          >
-            <User className="nav-icon" size={18} />
+          <div className="nav-item" onClick={() => navigate('/login')}>
+            <User className="nav-icon" size={20} />
             Sign In
           </div>
         )}
 
         {/* Upgrade CTA */}
         {user && (profile?.plan || 'free') === 'free' && (
-          <NavLink
-            to="/upgrade"
-            className={({ isActive }) => `nav-item nav-item-upgrade${isActive ? ' active' : ''}`}
-          >
-            <Crown className="nav-icon" size={18} />
+          <NavLink to="/upgrade" className={({ isActive }) => `nav-item nav-item-upgrade${isActive ? ' active' : ''}`}>
+            <Crown className="nav-icon" size={20} />
             Upgrade
           </NavLink>
         )}
 
         {/* Admin section */}
-        {(profile?.role === 'admin' || user?.email === 'bookmarkchatonline@gmail.com' || sessionStorage.getItem('adminAuth') === 'true') && (
+        {isAdmin && (
           <>
+            <div className="nav-divider" />
             <div className="nav-section-label">Admin</div>
             <NavLink to="/admin/dashboard" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
               <Activity className="nav-icon" size={18} />
@@ -134,33 +165,27 @@ export default function Sidebar({ onClose, isOpen, onOpenSettings }) {
         )}
       </nav>
 
-      {/* Upload CTA */}
-      <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        {user && (
-          <button
-            className="btn btn-primary btn-block"
-            onClick={() => navigate('/upload')}
-          >
-            <Upload size={15} />
-            Upload Snippet
-          </button>
-        )}
+      {/* Footer Actions */}
+      <div className="sidebar-footer">
         <button
           className="btn btn-ghost btn-block"
           onClick={(e) => { e.stopPropagation(); if (onOpenSettings) onOpenSettings(); }}
-          style={{ justifyContent: 'center' }}
+          aria-label="Settings"
         >
-          <Settings size={15} />
+          <Settings size={18} />
           Settings
         </button>
-        <button
-          className="btn btn-ghost btn-block"
-          onClick={(e) => { e.stopPropagation(); navigate('/admin/users'); }}
-          style={{ justifyContent: 'center', opacity: 0.5, fontSize: '0.8rem' }}
-        >
-          <Lock size={13} />
-          Admin Portal
-        </button>
+
+        {isAdmin && (
+          <button
+            className="btn btn-ghost btn-block"
+            onClick={(e) => { e.stopPropagation(); navigate('/admin/users'); }}
+            style={{ color: 'var(--text-muted)' }}
+          >
+            <Lock size={16} />
+            Admin Portal
+          </button>
+        )}
       </div>
     </aside>
   );

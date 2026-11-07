@@ -1,7 +1,7 @@
 // src/pages/VideoUpload.jsx
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, Video, Image, X, Plus } from 'lucide-react';
+import { Video, Image, X, Plus } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getUserProfile } from '../firebase/firestore';
 import { addVideo } from '../firebase/videos';
@@ -21,6 +21,7 @@ export default function VideoUpload() {
     title: '',
     description: '',
     tags: [],
+    isReel: false,
   });
   const [tagInput, setTagInput] = useState('');
   const [captions, setCaptions] = useState([]);
@@ -62,8 +63,11 @@ export default function VideoUpload() {
   };
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({ 
+      ...prev, 
+      [name]: type === 'checkbox' ? checked : value 
+    }));
   };
 
 
@@ -153,6 +157,7 @@ export default function VideoUpload() {
         tags: formData.tags,
         captions: captions.sort((a, b) => a.start - b.start),
         duration: 0, // You can add video duration extraction
+        isReel: formData.isReel,
       };
 
       const videoId = await addVideo(videoData);
@@ -265,6 +270,21 @@ export default function VideoUpload() {
               className="video-upload-textarea"
               rows={5}
             />
+          </div>
+
+          {/* Video Type (Reel vs Full) */}
+          <div className="video-upload-section">
+            <label className="video-upload-label" style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                name="isReel"
+                checked={formData.isReel}
+                onChange={handleInputChange}
+                style={{ width: '20px', height: '20px' }}
+              />
+              Publish as short vertical Reel
+            </label>
+            <p className="video-upload-helper">Check this if your video is a short, vertical-format video (like TikTok or Shorts).</p>
           </div>
 
 

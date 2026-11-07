@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "BookmarkChat",
+    "slug": "bookmarkchat",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0b0713",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "online.bookmarkchat.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0b0713",
+        "foregroundImage": "./assets/android-icon-foreground.png"
+      },
+      "package": "online.bookmarkchat.app",
+      "permissions": [
+        "INTERNET",
+        "ACCESS_NETWORK_STATE"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}

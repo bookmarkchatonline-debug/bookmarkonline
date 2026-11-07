@@ -859,6 +859,12 @@ export async function removeTrackFromPlaylist(playlistId, trackId) {
   });
 }
 
+export async function getPlaylist(playlistId) {
+  const snap = await getDoc(doc(db, 'playlists', playlistId));
+  if (!snap.exists()) return null;
+  return { id: snap.id, ...snap.data() };
+}
+
 export async function getPlaylistTracks(playlistId) {
   const snap = await getDoc(doc(db, 'playlists', playlistId));
   if (!snap.exists()) return [];

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Trophy, Crown, Plus, Trash2, CheckCircle } from 'lucide-react';
 import { getAllArtists, publishGoldTapeAward } from '../../firebase/firestore';
 import toast from 'react-hot-toast';
+import '../../styles/admin.css';
 
 const CATEGORIES = [
   'Best Song',
@@ -81,15 +82,21 @@ export default function AdminAwards() {
   };
 
   return (
-    <div className="page animate-fade-in" style={{ maxWidth: 800, margin: '0 auto' }}>
-      <div className="section-header" style={{ marginBottom: 30 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <Crown size={28} color="#facc15" />
-          <h1 style={{ margin: 0 }}>Publish Gold Tape Awards</h1>
+    <div className="admin-workspace animate-fade-in">
+      <div className="admin-header">
+        <div className="admin-title-group">
+          <div className="admin-title-icon" style={{ background: 'rgba(250, 204, 21, 0.1)' }}>
+            <Crown size={28} color="#facc15" />
+          </div>
+          <div>
+            <h1 className="admin-title">Publish Gold Tape Awards</h1>
+            <p className="admin-subtitle">Select winners for the monthly awards.</p>
+          </div>
         </div>
       </div>
 
-      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: 30, display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <div className="admin-panel" style={{ padding: '0' }}>
+        <div className="admin-form-group">
         <div className="input-group">
           <label className="input-label">Award Title</label>
           <input
@@ -101,17 +108,17 @@ export default function AdminAwards() {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h3 style={{ fontSize: '1.1rem', margin: 0 }}>Categories & Winners</h3>
+          <div className="admin-card-header">
+            <h3 className="admin-card-title">Categories & Winners</h3>
             <button className="btn btn-ghost btn-sm" onClick={addCategory}>
               <Plus size={14} /> Add Category
             </button>
           </div>
           
           {selections.map((sel, i) => (
-            <div key={i} style={{ display: 'flex', gap: 12, padding: 16, background: 'var(--bg-glass)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', alignItems: 'flex-start' }}>
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <div style={{ display: 'flex', gap: 12 }}>
+            <div key={i} className="admin-card-item" style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 16 }}>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div className="admin-form-row">
                   <div className="input-group" style={{ flex: 1 }}>
                     <label className="input-label">Category</label>
                     <select 
@@ -136,7 +143,7 @@ export default function AdminAwards() {
                   )}
                 </div>
 
-                <div style={{ display: 'flex', gap: 12 }}>
+                <div className="admin-form-row">
                   <div className="input-group" style={{ flex: 1 }}>
                     <label className="input-label">Winner (Artist)</label>
                     <select 
@@ -166,8 +173,8 @@ export default function AdminAwards() {
               </div>
               
               <button 
-                className="btn-icon" 
-                style={{ color: '#ef4444', marginTop: 24 }}
+                className="btn-icon admin-danger-text" 
+                style={{ marginTop: 28 }}
                 onClick={() => removeCategory(i)}
                 disabled={selections.length === 1}
               >
@@ -176,21 +183,24 @@ export default function AdminAwards() {
             </div>
           ))}
         </div>
-
-        <div style={{ marginTop: 12, padding: 16, background: 'rgba(250,204,21,0.1)', border: '1px solid rgba(250,204,21,0.3)', borderRadius: 'var(--radius-md)', fontSize: '0.875rem', color: '#facc15' }}>
-          <strong>Note:</strong> Publishing will automatically grant Gold Tape badges to the selected artists, update their creator level to "Gold Tape Winner", and notify them via the live feed.
         </div>
 
-        <button 
-          className="btn btn-primary" 
-          onClick={handlePublish}
-          disabled={publishing || selections.length === 0}
-          style={{ padding: 16, fontSize: '1rem', marginTop: 10 }}
-        >
-          {publishing ? 'Publishing Awards...' : (
-            <><CheckCircle size={18} /> Publish Gold Tape Awards</>
-          )}
-        </button>
+        <div style={{ padding: '16px 24px', background: 'rgba(250,204,21,0.05)', borderTop: '1px solid var(--border)' }}>
+          <div style={{ fontSize: '0.875rem', color: '#facc15' }}>
+            <strong>Note:</strong> Publishing will automatically grant Gold Tape badges to the selected artists, update their creator level to "Gold Tape Winner", and notify them via the live feed.
+          </div>
+          
+          <button 
+            className="btn btn-primary" 
+            onClick={handlePublish}
+            disabled={publishing || selections.length === 0}
+            style={{ marginTop: 16 }}
+          >
+            {publishing ? 'Publishing Awards...' : (
+              <><CheckCircle size={18} /> Publish Gold Tape Awards</>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );

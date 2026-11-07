@@ -1,16 +1,13 @@
-// src/pages/Home.jsx
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PlayCircle, Trophy, Users, Zap, TrendingUp, Music, ArrowRight, Flame, Shield, Radio } from 'lucide-react';
+import { Play, PlayCircle, Trophy, Music, Compass, Sparkles, Pause } from 'lucide-react';
 import { getTopTracks, getNewestTracks, getTopCreators, getLiveFeed, getLatestAward } from '../firebase/firestore';
-import { getPlatformStats } from '../firebase/stats';
 import { useAuth } from '../context/AuthContext';
 import { usePlayer } from '../context/PlayerContext';
 import TrackCard from '../components/track/TrackCard';
 import CreatorBadge from '../components/common/CreatorBadge';
-import MomentumArrow from '../components/common/MomentumArrow';
-import CountdownTimer from '../components/common/CountdownTimer';
-import '../styles/pages.css';
+import LikeButton from '../components/track/LikeButton';
+import '../styles/home.css';
 
 function timeAgo(timestamp) {
   if (!timestamp?.seconds) return 'just now';
@@ -22,363 +19,254 @@ function timeAgo(timestamp) {
 }
 
 export default function Home() {
-  const { user, profile } = useAuth();
+  const { profile } = useAuth();
   const navigate = useNavigate();
-  const { playQueue } = usePlayer();
+  const { play, playQueue, currentTrack, isPlaying } = usePlayer();
+  
   const [topTracks, setTopTracks] = useState([]);
   const [newestTracks, setNewestTracks] = useState([]);
   const [creators, setCreators] = useState([]);
   const [feed, setFeed] = useState([]);
   const [latestAward, setLatestAward] = useState(null);
-  const [platformStats, setPlatformStats] = useState({ activeCreators: 0, tracksUploaded: 0, onlineNow: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let active = true;
     Promise.all([
-      getTopTracks(6).catch(err => { console.warn('getTopTracks failed:', err); return []; }),
-      getNewestTracks(10).catch(err => { console.warn('getNewestTracks failed:', err); return []; }),
-      getTopCreators(5).catch(err => { console.warn('getTopCreators failed:', err); return []; }),
-      getLiveFeed(8).catch(err => { console.warn('getLiveFeed failed:', err); return []; }),
-      getLatestAward().catch(err => { console.warn('getLatestAward failed:', err); return null; }),
-      getPlatformStats().catch(err => { console.warn('getPlatformStats failed:', err); return { activeCreators: 0, tracksUploaded: 0, onlineNow: 0 }; })
-    ]).then(([top, newest, creats, f, award, stats]) => {
+      getTopTracks(8).catch(() => []),
+      getNewestTracks(8).catch(() => []),
+      getTopCreators(6).catch(() => []),
+      getLiveFeed(8).catch(() => []),
+      getLatestAward().catch(() => null)
+    ]).then(([top, newest, creats, f, award]) => {
+      if (!active) return;
       setTopTracks(top);
       setNewestTracks(newest);
       setCreators(creats);
       setFeed(f);
-      
-      const now = new Date();
-      const getAwardDate = (a) => {
-        if (!a) return null;
-        if (a.createdAt?.toDate) return a.createdAt.toDate();
-        if (a.createdAt?.seconds) return new Date(a.createdAt.seconds * 1000);
-        if (a.createdAt) return new Date(a.createdAt);
-        return null;
-      };
-      const d = getAwardDate(award);
-      const isCurrentMonth = d
-        ? (d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear())
-        : (award?.month === now.getMonth() && award?.year === now.getFullYear());
-
-      setLatestAward(isCurrentMonth ? award : null);
-      setPlatformStats(stats);
+      setLatestAward(award);
       setLoading(false);
-    }).catch(err => {
-      console.error("Critical error loading Home data", err);
+    }).catch(() => {
+      if (!active) return;
       setLoading(false);
     });
+    return () => { active = false; };
   }, []);
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
+  };
+
+  const featuredTrack = topTracks[0];
+  const trendingTracks = topTracks.slice(1);
+
+  if (loading) {
+    return <HomeSkeleton />;
+  }
+
   return (
-    <div className="page animate-fade-in">
-      {/* Hero */}
-      <section className="home-hero">
-        <div className="home-hero-eyebrow">The Home for Rising Artists</div>
-        <h1 className="home-hero-title">
-          Discover the Next <span className="highlight">Big Sound</span>
-        </h1>
-        <p className="home-hero-sub">
-          BookmarkChat is where independent creators drop snippets, build their fanbase, and earn recognition through the Gold Tape Awards.
-        </p>
-        
-        <div className="home-hero-stats">
-          <div className="hero-stat">
-            <div className="hero-stat-label">Active Creators</div>
-            <div className="hero-stat-value">{platformStats.activeCreators.toLocaleString()}</div>
-          </div>
-          <div className="hero-stat">
-            <div className="hero-stat-label">Tracks Uploaded</div>
-            <div className="hero-stat-value">{platformStats.tracksUploaded.toLocaleString()}</div>
-          </div>
-          <div className="hero-stat">
-            <div className="hero-stat-label">Online Now</div>
-            <div className="hero-stat-value" style={{ color: '#22c55e', display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span className="live-dot" style={{ position: 'relative' }} />
-              {platformStats.onlineNow.toLocaleString()}
+    <div className="home-container animate-fade-in">
+      {/* 1. Hero / Welcome */}
+      <header className="home-welcome">
+        <div>
+          <h1 className="home-greeting">{getGreeting()}{profile?.username ? `, ${profile.username}` : ''}</h1>
+          <p className="home-subtitle">Discover your next favorite track.</p>
+        </div>
+        <div className="home-welcome-actions">
+          <button className="btn btn-primary" onClick={() => navigate('/discover')}>
+            <Compass size={16} /> Explore Music
+          </button>
+        </div>
+      </header>
+
+      {/* 2. Featured / Spotlight */}
+      {featuredTrack && (
+        <section className="home-spotlight" onClick={() => navigate(`/track/${featuredTrack.id}`)}>
+          <div className="spotlight-bg" style={{ backgroundImage: `url(${featuredTrack.coverUrl || ''})` }} />
+          <div className="spotlight-overlay" />
+          <div className="spotlight-content">
+            <div className="spotlight-badge"><Sparkles size={14} /> Spotlight</div>
+            <div className="spotlight-info">
+              <h2 className="spotlight-title">{featuredTrack.title}</h2>
+              <p className="spotlight-artist" onClick={(e) => { e.stopPropagation(); navigate(`/profile/${featuredTrack.uid}`); }}>
+                {featuredTrack.username}
+              </p>
+            </div>
+            <div className="spotlight-actions" onClick={(e) => e.stopPropagation()}>
+              <button 
+                className="btn btn-primary btn-lg spotlight-play" 
+                onClick={() => play(featuredTrack)}
+                aria-label={currentTrack?.id === featuredTrack.id && isPlaying ? "Pause" : "Play"}
+              >
+                {currentTrack?.id === featuredTrack.id && isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" />}
+                Play
+              </button>
+              <LikeButton trackId={featuredTrack.id} initialLikes={featuredTrack.likes || 0} />
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
-      {/* ─── Why Artists Join ─────────────────────────────────── */}
-      <section className="home-why-section">
-        <div className="home-why-header">
-          <div className="home-why-eyebrow">Why Artists Join BookmarkChat</div>
-        </div>
-        <div className="home-why-grid">
-          {[
-            { Icon: Shield,     color: '#a855f7', title: 'Keep 100% Ownership',         desc: 'Your music, your rights. Always.' },
-            { Icon: TrendingUp, color: '#22c55e', title: 'Get Discovered Through Rankings', desc: 'Rankings and Fresh Streams give everyone a real chance.' },
-            { Icon: Trophy,     color: '#facc15', title: 'Win Gold Tape Awards',         desc: 'Monthly awards. Real recognition. Real opportunities.' },
-            { Icon: Users,      color: '#3b82f6', title: 'Build a Real Fanbase',         desc: 'Connect with listeners who truly support your art.' },
-            { Icon: Radio,      color: '#f43f5e', title: 'No Label Required',            desc: 'No labels, no managers. Just talent and opportunity.' },
-          ].map(({ Icon, color, title, desc }, i) => (
-            <div key={i} className="home-why-card" style={{ '--why-color': color }}>
-              <div className="home-why-icon" style={{ background: `${color}1a`, color }}>
-                <Icon size={20} />
+      {/* 3. Trending Music */}
+      {trendingTracks.length > 0 && (
+        <section className="home-section">
+          <div className="home-section-header">
+            <h2>Trending Music</h2>
+            <button className="home-see-all" onClick={() => playQueue(trendingTracks, 0)}>
+              Play All <PlayCircle size={14} />
+            </button>
+          </div>
+          <div className="home-horizontal-scroll">
+            {trendingTracks.map(track => (
+              <div key={track.id} className="home-track-card" onClick={() => navigate(`/track/${track.id}`)}>
+                <div className="home-track-cover-wrap">
+                  {track.coverUrl ? (
+                    <img src={track.coverUrl} alt={track.title} className="home-track-cover" loading="lazy" />
+                  ) : (
+                    <div className="home-track-cover placeholder"><Music size={24} /></div>
+                  )}
+                  <button 
+                    className="home-track-play-btn" 
+                    onClick={(e) => { e.stopPropagation(); play(track); }}
+                    aria-label="Play Track"
+                  >
+                    <Play fill="currentColor" size={16} />
+                  </button>
+                </div>
+                <div className="home-track-meta">
+                  <div className="home-track-title">{track.title}</div>
+                  <div className="home-track-artist">{track.username}</div>
+                </div>
               </div>
-              <div className="home-why-title">{title}</div>
-              <div className="home-why-desc">{desc}</div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <div className="home-grid-layout">
+        <div className="home-main-col">
+          {/* 4. New Releases */}
+          <section className="home-section">
+            <div className="home-section-header">
+              <h2>New Releases</h2>
+              <button className="home-see-all" onClick={() => navigate('/discover')}>View All</button>
             </div>
-          ))}
-        </div>
-      </section>
-
-      <div className="home-layout">
-        <div className="home-main">
-          
-          {/* Your Momentum (If Artist) */}
-          {user && profile?.role === 'artist' && profile?.stats && (
-            <section className="home-section" style={{
-              background: 'linear-gradient(135deg, rgba(168,85,247,0.1), rgba(192,38,211,0.05))',
-              border: '1px solid var(--border-accent)',
-              borderRadius: 'var(--radius-lg)',
-              padding: '20px',
-              marginBottom: '10px'
-            }}>
-              <div className="section-header" style={{ marginBottom: '12px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <TrendingUp size={18} color="var(--accent)" />
-                  <span className="section-title">Your Momentum</span>
-                </div>
-                <button className="rail-action" onClick={() => navigate(`/profile/${user.uid}`)}>
-                  View Profile
-                </button>
+            {newestTracks.length > 0 ? (
+              <div className="home-vertical-list">
+                {newestTracks.map(track => (
+                  <TrackCard key={track.id} track={track} />
+                ))}
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
-                <div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Weekly Likes</div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    {profile.stats.weeklyLikes || 0}
-                    {profile.stats.weeklyLikes > 0 && <MomentumArrow delta={profile.stats.weeklyLikes} showValue={false} />}
+            ) : (
+              <div className="empty-state">No new releases yet.</div>
+            )}
+          </section>
+
+          {/* 6. Community Activity */}
+          {feed.length > 0 && (
+            <section className="home-section" style={{ marginTop: '32px' }}>
+              <div className="home-section-header">
+                <h2>Community Activity</h2>
+              </div>
+              <div className="home-feed-list">
+                {feed.map(item => (
+                  <div key={item.id} className="home-feed-item" onClick={() => {
+                    if (item.trackId) navigate(`/track/${item.trackId}`);
+                    else if (item.uid) navigate(`/profile/${item.uid}`);
+                  }}>
+                    <div className="home-feed-avatar">
+                      {item.avatarUrl ? (
+                        <img src={item.avatarUrl} alt={item.username || 'User'} loading="lazy" />
+                      ) : (
+                        <div className="placeholder">{(item.username || 'A')[0].toUpperCase()}</div>
+                      )}
+                    </div>
+                    <div className="home-feed-content">
+                      <p><span className="home-feed-name">{item.username || 'Someone'}</span> {item.message}</p>
+                      {item.trackTitle && <p className="home-feed-track">"{item.trackTitle}"</p>}
+                      <span className="home-feed-time">{timeAgo(item.createdAt)}</span>
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Followers</div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 800 }}>{profile.stats.followers || 0}</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status</div>
-                  <div style={{ marginTop: '4px' }}>
-                    <CreatorBadge level={profile.creatorLevel} size="sm" />
+                ))}
+              </div>
+            </section>
+          )}
+        </div>
+
+        <div className="home-side-col">
+          {/* 5. Discover Creators */}
+          {creators.length > 0 && (
+            <section className="home-section">
+              <div className="home-section-header">
+                <h2>Discover Creators</h2>
+                <button className="home-see-all" onClick={() => navigate('/artists')}>View All</button>
+              </div>
+              <div className="home-creators-grid">
+                {creators.map(creator => (
+                  <div key={creator.uid} className="home-creator-card" onClick={() => navigate(`/profile/${creator.uid}`)}>
+                    <div className="home-creator-avatar">
+                      {creator.avatarUrl ? (
+                        <img src={creator.avatarUrl} alt={creator.username} loading="lazy" />
+                      ) : (
+                        <div className="placeholder">{(creator.username || 'C')[0].toUpperCase()}</div>
+                      )}
+                    </div>
+                    <div className="home-creator-info">
+                      <div className="home-creator-name">{creator.username}</div>
+                      <CreatorBadge level={creator.creatorLevel} size="sm" showLabel={false} />
+                    </div>
                   </div>
-                </div>
+                ))}
               </div>
             </section>
           )}
 
-          {/* Trending Tracks Scroll */}
-          <section className="home-section">
-            <div className="section-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Flame size={18} color="#f59e0b" />
-                <span className="section-title">Trending Right Now</span>
+          {/* 7. Weekly Winners / Gold Tape */}
+          <section className="home-section home-award-section" style={{ marginTop: '32px' }}>
+            <div className="home-award-card">
+              <div className="home-award-header">
+                <Trophy size={16} color="#facc15" />
+                <h3>Gold Tape Awards</h3>
               </div>
-              {topTracks.length > 0 && (
-                <button className="play-all-btn" onClick={() => playQueue(topTracks, 0)}>
-                  <PlayCircle size={15} /> Play All
-                </button>
-              )}
-            </div>
-            {loading ? (
-              <div className="trending-scroll">
-                {[1, 2, 3, 4].map(i => (
-                  <div key={i} className="trending-scroll-item skeleton-card" style={{ height: 200 }} />
-                ))}
-              </div>
-            ) : (
-              <div className="trending-scroll">
-                {topTracks.map((track, i) => (
-                  <div
-                    key={track.id}
-                    className="trending-scroll-item trending-card"
-                    onClick={() => navigate(`/track/${track.id}`)}
-                  >
-                    {track.coverUrl ? (
-                      <img src={track.coverUrl} alt={track.title} className="trending-card-img" />
-                    ) : (
-                      <div className="trending-card-img" style={{ background: 'var(--accent-grad)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Music size={32} color="rgba(255,255,255,0.5)" />
-                      </div>
-                    )}
-                    <div className="trending-card-overlay" />
-                    <div className="trending-card-content">
-                      <div className="trending-card-rank">#{i + 1}</div>
-                      <div className="trending-card-title">{track.title}</div>
-                      <div className="trending-card-artist">{track.username}</div>
-                      <div className="trending-card-footer">
-                        {track.tags && track.tags[0] && (
-                          <div className="trending-card-genre">{track.tags[0]}</div>
-                        )}
-                        <div className="trending-card-likes">
-                          ❤️ {track.likes}
-                        </div>
+              {latestAward && latestAward.categories && latestAward.categories.length > 0 ? (
+                <div className="home-award-winners">
+                  {latestAward.categories.slice(0, 3).map((cat, i) => (
+                    <div key={i} className="home-award-winner">
+                      <div className="home-award-rank">#{i+1}</div>
+                      <div className="home-award-info">
+                        <div className="home-award-cat">{cat.name}</div>
+                        <div className="home-award-name">{cat.winnerName || 'TBD'}</div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-
-          {/* Weekly Gold Tape Preview */}
-          <section className="home-section" style={{
-            background: 'var(--bg-card)',
-            border: '1px solid rgba(250,204,21,0.2)',
-            borderRadius: 'var(--radius-lg)',
-            padding: '24px',
-            position: 'relative',
-            overflow: 'hidden'
-          }}>
-            <div style={{ position: 'absolute', top: -50, right: -50, width: 200, height: 200, background: 'radial-gradient(circle, rgba(250,204,21,0.1), transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }} />
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', position: 'relative', zIndex: 1 }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#facc15', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '4px' }}>
-                  <Trophy size={14} /> Gold Tape Awards
+                  ))}
+                  <button className="btn btn-ghost btn-block" onClick={() => navigate('/awards')}>View All Winners</button>
                 </div>
-                <h3 style={{ fontSize: '1.2rem', margin: 0 }}>
-                  {new Date().toLocaleString('default', { month: 'long' })} Awards
-                </h3>
-              </div>
-              <button className="btn btn-ghost btn-sm" onClick={() => navigate('/awards')}>
-                View All <ArrowRight size={14} />
-              </button>
-            </div>
-            
-            {latestAward && latestAward.categories ? (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', position: 'relative', zIndex: 1 }}>
-                {latestAward.categories.slice(0, 3).map((cat, i) => (
-                  <div key={i} style={{ background: 'var(--bg-glass)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(250,204,21,0.1)', color: '#facc15', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}>
-                      {i === 0 ? '🏆' : i === 1 ? '🎛' : '🚀'}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>{cat.name}</div>
-                      <div style={{ fontSize: '0.85rem', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{cat.winnerName || 'TBD'}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                <CountdownTimer targetDate={null} label="Next Awards Reveal In" />
-                <div style={{ flex: 1, color: 'var(--text-secondary)', fontSize: '0.85rem', paddingLeft: '20px', borderLeft: '1px solid var(--border)' }}>
-                  Keep creating and engaging to increase your chances of winning a Gold Tape this month!
-                </div>
-              </div>
-            )}
-          </section>
-
-          {/* New Releases */}
-          <section className="home-section">
-            <div className="section-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Music size={18} color="var(--accent)" />
-                <span className="section-title">Fresh Drops</span>
-              </div>
-              <button className="rail-action" onClick={() => navigate('/discover')}>
-                Discover More
-              </button>
-            </div>
-            <div className="tracks-grid">
-              {loading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="skeleton-card" style={{ opacity: 1 - i * 0.15 }} />
-                ))
-              ) : newestTracks.length > 0 ? (
-                newestTracks.map(track => <TrackCard key={track.id} track={track} />)
               ) : (
-                <div className="empty-state">No tracks uploaded yet.</div>
+                <div className="home-award-empty">
+                  <p>Next awards revealing soon. Keep creating and engaging!</p>
+                  <button className="btn btn-outline btn-block" onClick={() => navigate('/awards')}>Learn More</button>
+                </div>
               )}
             </div>
           </section>
         </div>
+      </div>
+    </div>
+  );
+}
 
-        {/* Right Rail */}
-        <div className="home-rail">
-          {/* Top Creators */}
-          <div className="rail-card">
-            <div className="rail-header">
-              <span className="rail-title" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Users size={14} color="var(--accent)" /> Top Creators
-              </span>
-              <button className="rail-action" onClick={() => navigate('/artists')}>View All</button>
-            </div>
-            <div className="creator-list">
-              {loading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} style={{ height: 64, background: 'var(--bg-glass)', borderRadius: 'var(--radius-md)' }} />
-                ))
-              ) : (
-                creators.map((creator) => (
-                  <div key={creator.uid} className="creator-row" onClick={() => navigate(`/profile/${creator.uid}`)}>
-                    <div className="creator-avatar">
-                      {creator.avatarUrl ? (
-                        <img src={creator.avatarUrl} alt={creator.username} />
-                      ) : (
-                        <div className="creator-avatar-fallback">{(creator.username || 'A').slice(0,2).toUpperCase()}</div>
-                      )}
-                    </div>
-                    <div className="creator-info">
-                      <div className="creator-name">{creator.username}</div>
-                      <div className="creator-meta">
-                        <CreatorBadge level={creator.creatorLevel} size="sm" showLabel={false} />
-                        <span className="creator-likes">{creator.stats?.totalLikes || 0} likes</span>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          {/* Live Feed */}
-          <div className="rail-card">
-            <div className="rail-header">
-              <span className="rail-title" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Zap size={14} color="var(--success)" /> Live Feed
-              </span>
-              <button className="rail-action" onClick={() => navigate('/feed')}>View All</button>
-            </div>
-            <div className="feed-list">
-              {loading ? (
-                Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} style={{ height: 48, background: 'var(--bg-glass)', borderRadius: 'var(--radius-sm)' }} />
-                ))
-              ) : feed.length === 0 ? (
-                <div className="empty-state" style={{ padding: '20px 0' }}>
-                  <p style={{ fontSize: '0.8rem' }}>No activity yet.</p>
-                </div>
-              ) : (
-                feed.map(item => (
-                  <div key={item.id} className="feed-item" onClick={() => {
-                    if (item.trackId) navigate(`/track/${item.trackId}`);
-                    else if (item.uid) navigate(`/profile/${item.uid}`);
-                  }} style={{ cursor: 'pointer' }}>
-                    <div className="feed-avatar">
-                      {item.avatarUrl ? (
-                        <img src={item.avatarUrl} alt={item.username} />
-                      ) : (
-                        <div className="feed-avatar-fallback" style={{ background: item.type === 'like' ? '#ef4444' : item.type === 'follow' ? '#3b82f6' : 'var(--accent)' }}>
-                          {(item.username || 'A').slice(0,1).toUpperCase()}
-                        </div>
-                      )}
-                    </div>
-                    <div className="feed-content">
-                      <div className="feed-text">
-                        <span className="feed-name">{item.username || 'Someone'}</span> {item.message}
-                      </div>
-                      {item.trackTitle && <div className="feed-track">"{item.trackTitle}"</div>}
-                      <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                        {timeAgo(item.createdAt)}
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
+function HomeSkeleton() {
+  return (
+    <div className="home-container">
+      <div className="skeleton-hero" style={{ height: 80, marginBottom: 24, borderRadius: 'var(--radius-lg)' }} />
+      <div className="skeleton-hero" style={{ height: 320, marginBottom: 32, borderRadius: 'var(--radius-xl)' }} />
+      <div className="skeleton-hero" style={{ height: 200, marginBottom: 32, borderRadius: 'var(--radius-lg)' }} />
+      <div className="home-grid-layout">
+        <div className="skeleton-hero" style={{ height: 400, borderRadius: 'var(--radius-lg)' }} />
+        <div className="skeleton-hero" style={{ height: 400, borderRadius: 'var(--radius-lg)' }} />
       </div>
     </div>
   );

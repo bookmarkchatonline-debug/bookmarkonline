@@ -3,6 +3,7 @@ import { Routes, Route, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import Sidebar from './components/layout/Sidebar';
 import Topbar from './components/layout/Topbar';
+import MobileBottomNav from './components/layout/MobileBottomNav';
 import Player from './components/layout/Player';
 import SettingsModal from './components/layout/SettingsModal';
 import Home from './pages/Home';
@@ -11,6 +12,8 @@ import Discover from './pages/Discover';
 import Rankings from './pages/Rankings';
 import Upload from './pages/Upload';
 import Profile from './pages/Profile';
+import Library from './pages/Library';
+import Playlist from './pages/Playlist';
 import TrackPage from './pages/TrackPage';
 import Feed from './pages/Feed';
 import Community from './pages/Community';
@@ -36,11 +39,11 @@ import About from './pages/About';
 import Videos from './pages/Videos';
 import VideoPage from './pages/VideoPage';
 import VideoUpload from './pages/VideoUpload';
+import Reels from './pages/Reels';
 import { useAuth } from './context/AuthContext';
 
 // Pages that use the full app shell (sidebar + topbar + player)
-const SHELL_ROUTES = ['/', '/discover', '/rankings', '/upload', '/profile', '/track', '/feed', '/community', '/messages', '/awards', '/artists', '/opportunities', '/upgrade', '/history', '/videos', '/video'];
-
+const SHELL_ROUTES = ['/', '/discover', '/rankings', '/upload', '/profile', '/track', '/feed', '/community', '/messages', '/awards', '/artists', '/opportunities', '/upgrade', '/history', '/videos', '/video', '/reels', '/library', '/playlist'];
 
 const NON_SHELL_ROUTES = ['/login', '/register', '/privacy', '/terms', '/about'];
 
@@ -53,7 +56,6 @@ function isShellRoute(pathname, isLoggedIn) {
 export default function App() {
   const { loading, user } = useAuth();
   const location = useLocation();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const isAdminRoute = location.pathname.startsWith('/admin');
   const useShell = !isAdminRoute && isShellRoute(location.pathname, !!user);
@@ -61,11 +63,11 @@ export default function App() {
   // Show spinner while Firebase auth is resolving
   if (loading) {
     return (
-      <div className="loading-screen">
-        <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '1.4rem', fontWeight: 800, letterSpacing: '-0.02em' }}>
-          BOOKMARK<span style={{ background: 'linear-gradient(135deg, #a855f7, #c026d3)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>CHAT</span>
+      <div className="loading-screen" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', background: 'var(--bg-primary)' }}>
+        <div style={{ fontFamily: 'Outfit, sans-serif', fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.04em' }}>
+          BOOKMARK<span style={{ color: 'var(--accent)' }}>CHAT</span>
         </div>
-        <div className="spinner" />
+        <div className="spinner" style={{ marginTop: '16px', width: '32px', height: '32px', border: '3px solid var(--border)', borderTopColor: 'var(--accent)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
       </div>
     );
   }
@@ -94,10 +96,10 @@ export default function App() {
           position="top-center"
           toastOptions={{
             style: {
-              background: 'var(--bg-card)',
+              background: 'var(--bg-elevated)',
               color: 'var(--text-primary)',
               border: '1px solid var(--border)',
-              borderRadius: '10px',
+              borderRadius: 'var(--radius-md)',
               fontSize: '0.875rem',
             },
           }}
@@ -115,44 +117,28 @@ export default function App() {
     );
   }
 
-
   return (
     <>
       <Toaster
         position="top-center"
         toastOptions={{
           style: {
-            background: 'var(--bg-card)',
+            background: 'var(--bg-elevated)',
             color: 'var(--text-primary)',
             border: '1px solid var(--border)',
-            borderRadius: '10px',
+            borderRadius: 'var(--radius-md)',
             fontSize: '0.875rem',
           },
         }}
       />
 
       <div className="app-shell">
-        {/* Sidebar */}
-        <Sidebar
-          onClose={() => setSidebarOpen(false)}
-          isOpen={sidebarOpen}
-          onOpenSettings={() => setSettingsOpen(true)}
-        />
-
-        {/* Mobile overlay */}
-        {sidebarOpen && (
-          <div
-            style={{
-              position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
-              zIndex: 150,
-            }}
-            onClick={() => setSidebarOpen(false)}
-          />
-        )}
+        {/* Desktop Sidebar */}
+        <Sidebar onOpenSettings={() => setSettingsOpen(true)} />
 
         {/* Main area */}
         <div className="main-content">
-          <Topbar onMenuToggle={() => setSidebarOpen((v) => !v)} />
+          <Topbar />
 
           <Routes>
             <Route path="/" element={user ? <Home /> : <Landing />} />
@@ -170,15 +156,21 @@ export default function App() {
             <Route path="/upgrade/success" element={<UpgradeSuccess />} />
             <Route path="/upload" element={<Upload />} />
             <Route path="/history" element={<History />} />
+            <Route path="/library" element={<Library />} />
+            <Route path="/playlist/:id" element={<Playlist />} />
             <Route path="/profile/:uid" element={<Profile />} />
             <Route path="/track/:id" element={<TrackPage />} />
             <Route path="/videos" element={<Videos />} />
             <Route path="/video/:id" element={<VideoPage />} />
             <Route path="/video-upload" element={<VideoUpload />} />
+            <Route path="/reels" element={<Reels />} />
             {/* fallback */}
             <Route path="*" element={<Home />} />
           </Routes>
         </div>
+        
+        {/* Mobile Bottom Navigation */}
+        <MobileBottomNav />
       </div>
 
       {/* Sticky player */}

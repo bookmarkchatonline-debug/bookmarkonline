@@ -3,7 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- viewport-fit=cover is required for the env(safe-area-inset-*) padding used
+         throughout src/styles/*.css to apply inside the native app WebView. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>BookmarkChat — Discover. Save. Rank.</title>
     <meta name="description" content="BookmarkChat is a TikTok-style music discovery platform for 15–30 second audio snippets. Upload, rank, and discover rising music from the community." />
     <meta name="theme-color" content="#a855f7" />

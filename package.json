@@ -7,9 +7,21 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "expo:start": "npm --prefix mobile-expo run start",
+    "expo:tunnel": "npm --prefix mobile-expo exec expo start -- --tunnel",
+    "mobile:sync": "npm run build && cap sync",
+    "mobile:android": "npm run build && cap sync android && cap open android",
+    "mobile:ios": "npm run build && cap sync ios && cap open ios"
   },
   "dependencies": {
+    "@capacitor-firebase/authentication": "^8.5.2",
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/core": "^8.5.3",
+    "@capacitor/ios": "^8.5.3",
+    "@capacitor/keyboard": "^8.0.6",
+    "@capacitor/splash-screen": "^8.0.2",
     "firebase": "^12.13.0",
     "lucide-react": "^1.16.0",
     "react": "^19.2.6",
@@ -19,6 +31,7 @@
     "react-router-dom": "^7.15.1"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.5.3",
     "@eslint/js": "^10.0.1",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",

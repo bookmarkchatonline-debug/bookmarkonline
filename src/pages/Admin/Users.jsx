@@ -5,6 +5,7 @@ import { db } from '../../firebase/config';
 import { collection, getDocs, updateDoc, doc } from 'firebase/firestore';
 import { deleteUserAdmin, updateUserRole } from '../../firebase/firestore';
 import toast from 'react-hot-toast';
+import '../../styles/admin.css';
 
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);
@@ -86,121 +87,116 @@ export default function AdminUsers() {
   );
 
   return (
-    <div className="page animate-fade-in" style={{ maxWidth: 1000, margin: '0 auto', padding: '24px' }}>
-      
-      <div className="section-header" style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <Users size={24} color="var(--accent)" />
-          <h2 style={{ margin: 0 }}>Manage User Plans</h2>
+    <div className="admin-workspace animate-fade-in">
+      <div className="admin-header">
+        <div className="admin-title-group">
+          <div className="admin-title-icon" style={{ background: 'var(--accent-soft)' }}>
+            <Users size={28} color="var(--accent)" />
+          </div>
+          <div>
+            <h1 className="admin-title">Manage Users</h1>
+            <p className="admin-subtitle">Update plans, roles, and profiles.</p>
+          </div>
         </div>
         
-        <div className="artist-dir-search" style={{ margin: 0, width: '300px' }}>
-          <Search size={16} className="artist-dir-search-icon" style={{ left: 12 }} />
+        <div className="input-wrapper" style={{ width: '300px' }}>
+          <Search size={18} className="input-icon" />
           <input
             type="search"
-            placeholder="Search users by name or email..."
+            placeholder="Search users..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="input"
-            style={{ paddingLeft: 36 }}
+            className="input input-with-icon"
           />
         </div>
       </div>
 
-      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-          <thead>
-            <tr style={{ background: 'var(--bg-glass)', borderBottom: '1px solid var(--border)' }}>
-              <th style={{ padding: '16px', fontWeight: 600, color: 'var(--text-secondary)' }}>User</th>
-              <th style={{ padding: '16px', fontWeight: 600, color: 'var(--text-secondary)' }}>Email</th>
-              <th style={{ padding: '16px', fontWeight: 600, color: 'var(--text-secondary)' }}>Role</th>
-              <th style={{ padding: '16px', fontWeight: 600, color: 'var(--text-secondary)' }}>Plan</th>
-              <th style={{ padding: '16px', fontWeight: 600, color: 'var(--text-secondary)' }}>Expiry Date</th>
-              <th style={{ padding: '16px', fontWeight: 600, color: 'var(--text-secondary)', textAlign: 'right' }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan="6" style={{ padding: '24px', textAlign: 'center' }}>Loading users...</td></tr>
-            ) : filteredUsers.length === 0 ? (
-              <tr><td colSpan="6" style={{ padding: '24px', textAlign: 'center' }}>No users found.</td></tr>
-            ) : (
-              filteredUsers.map(user => (
-                <tr key={user.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                  <td style={{ padding: '16px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      {user.avatarUrl ? (
-                        <img src={user.avatarUrl} alt={user.username} style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }} />
-                      ) : (
-                        <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--bg-glass)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 700 }}>
-                          {(user.username || 'U').slice(0,2).toUpperCase()}
-                        </div>
-                      )}
-                      <span style={{ fontWeight: 600 }}>{user.username || 'Unnamed'}</span>
-                    </div>
-                  </td>
-                  <td style={{ padding: '16px', color: 'var(--text-secondary)' }}>{user.email || 'N/A'}</td>
-                  <td style={{ padding: '16px' }}>
-                    <select 
-                      className="input" 
-                      style={{ padding: '6px 12px', fontSize: '0.75rem', width: 'auto', display: 'inline-block', background: 'var(--bg-glass)', color: 'var(--text-primary)', border: 'none', textTransform: 'uppercase', colorScheme: 'dark' }}
-                      value={user.role || 'listener'}
-                      onChange={(e) => handleUpdateRole(user.id, e.target.value)}
-                    >
-                      <option value="listener" style={{ background: '#1e1e1e', color: '#fff' }}>Listener</option>
-                      <option value="artist" style={{ background: '#1e1e1e', color: '#fff' }}>Artist</option>
-                      <option value="admin" style={{ background: '#1e1e1e', color: '#fff' }}>Admin</option>
-                    </select>
-                  </td>
-                  <td style={{ padding: '16px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      {user.plan === 'gold_creator' ? <Crown size={14} color="#facc15" /> : null}
+      <div className="admin-panel">
+        <div className="admin-table-container">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Plan</th>
+                <th>Expiry Date</th>
+                <th style={{ textAlign: 'right' }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr><td colSpan="6" style={{ padding: '24px', textAlign: 'center' }}>Loading users...</td></tr>
+              ) : filteredUsers.length === 0 ? (
+                <tr><td colSpan="6" style={{ padding: '24px', textAlign: 'center' }}>No users found.</td></tr>
+              ) : (
+                filteredUsers.map(user => (
+                  <tr key={user.id}>
+                    <td>
+                      <div className="admin-user-cell">
+                        {user.avatarUrl ? (
+                          <img src={user.avatarUrl} alt={user.username} className="admin-user-avatar" />
+                        ) : (
+                          <div className="admin-user-avatar">
+                            {(user.username || 'U').slice(0,2).toUpperCase()}
+                          </div>
+                        )}
+                        <span style={{ fontWeight: 600 }}>{user.username || 'Unnamed'}</span>
+                      </div>
+                    </td>
+                    <td style={{ color: 'var(--text-secondary)' }}>{user.email || 'N/A'}</td>
+                    <td>
                       <select 
-                        className="input" 
-                        style={{ 
-                          padding: '6px 12px', 
-                          fontSize: '0.8rem', 
-                          width: 'auto', 
-                          display: 'inline-block',
-                          background: 'var(--bg-glass)',
-                          border: 'none',
-                          color: user.plan === 'gold_creator' ? '#facc15' : user.plan === 'creator_pro' ? '#a855f7' : 'var(--text-primary)',
-                          fontWeight: 600,
-                          colorScheme: 'dark'
-                        }}
-                        value={user.plan || 'free'}
-                        onChange={(e) => handleUpdatePlan(user.id, e.target.value)}
+                        className="admin-select-input" 
+                        value={user.role || 'listener'}
+                        onChange={(e) => handleUpdateRole(user.id, e.target.value)}
                       >
-                        <option value="free" style={{ background: '#1e1e1e', color: '#fff' }}>Free</option>
-                        <option value="creator_pro" style={{ background: '#1e1e1e', color: '#a855f7' }}>Creator Pro</option>
-                        <option value="gold_creator" style={{ background: '#1e1e1e', color: '#facc15' }}>Gold Creator</option>
+                        <option value="listener" style={{ background: '#1e1e1e', color: '#fff' }}>Listener</option>
+                        <option value="artist" style={{ background: '#1e1e1e', color: '#fff' }}>Artist</option>
+                        <option value="admin" style={{ background: '#1e1e1e', color: '#fff' }}>Admin</option>
                       </select>
-                    </div>
-                  </td>
-                  <td style={{ padding: '16px' }}>
-                    <input 
-                      type="date"
-                      className="input"
-                      style={{ padding: '6px 12px', fontSize: '0.75rem', width: 'auto', background: 'var(--bg-glass)', color: 'var(--text-primary)', border: 'none', colorScheme: 'dark' }}
-                      value={user.planExpiry || ''}
-                      onChange={(e) => handleUpdateExpiry(user.id, e.target.value)}
-                    />
-                  </td>
-                  <td style={{ padding: '16px', textAlign: 'right' }}>
-                    <button 
-                      className="btn-icon" 
-                      onClick={() => handleDeleteUser(user.id)}
-                      title="Delete User"
-                      style={{ color: '#ef4444' }}
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </td>
-                </tr>
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        {user.plan === 'gold_creator' ? <Crown size={14} color="#facc15" /> : null}
+                        <select 
+                          className="admin-select-input" 
+                          style={{ color: user.plan === 'gold_creator' ? '#facc15' : user.plan === 'creator_pro' ? '#a855f7' : 'var(--text-primary)' }}
+                          value={user.plan || 'free'}
+                          onChange={(e) => handleUpdatePlan(user.id, e.target.value)}
+                        >
+                          <option value="free" style={{ background: '#1e1e1e', color: '#fff' }}>Free</option>
+                          <option value="creator_pro" style={{ background: '#1e1e1e', color: '#a855f7' }}>Creator Pro</option>
+                          <option value="gold_creator" style={{ background: '#1e1e1e', color: '#facc15' }}>Gold Creator</option>
+                        </select>
+                      </div>
+                    </td>
+                    <td>
+                      <input 
+                        type="date"
+                        className="admin-select-input"
+                        style={{ colorScheme: 'dark' }}
+                        value={user.planExpiry || ''}
+                        onChange={(e) => handleUpdateExpiry(user.id, e.target.value)}
+                      />
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      <div className="admin-action-row">
+                        <button 
+                          className="btn-icon admin-danger-text" 
+                          onClick={() => handleDeleteUser(user.id)}
+                          title="Delete User"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
               ))
             )}
           </tbody>
-        </table>
+          </table>
+        </div>
       </div>
     </div>
   );

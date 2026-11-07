@@ -1,14 +1,11 @@
-// src/components/layout/Topbar.jsx
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
-  Search, Bell, Upload, Menu, User, LogOut, Settings,
-  Crown, ChevronDown, X,
+  Search, Bell, Upload, User, LogOut, ChevronDown, X
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { logout } from '../../firebase/auth';
-import { getNotifications, getUnreadNotificationCount, markAllNotificationsRead } from '../../firebase/firestore';
-import { searchTracks, searchUsers } from '../../firebase/firestore';
+import { getNotifications, getUnreadNotificationCount, markAllNotificationsRead, searchTracks, searchUsers } from '../../firebase/firestore';
 import CreatorBadge from '../common/CreatorBadge';
 import toast from 'react-hot-toast';
 import '../../styles/layout.css';
@@ -22,9 +19,10 @@ function timeAgo(timestamp) {
   return `${Math.floor(diff / 86400)}d`;
 }
 
-export default function Topbar({ onMenuToggle }) {
+export default function Topbar() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -33,6 +31,7 @@ export default function Topbar({ onMenuToggle }) {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  
   const searchRef = useRef(null);
   const notifRef = useRef(null);
   const userMenuRef = useRef(null);
@@ -61,6 +60,13 @@ export default function Topbar({ onMenuToggle }) {
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
+
+  // Close menus on route change
+  useEffect(() => {
+    setSearchOpen(false);
+    setNotifOpen(false);
+    setUserMenuOpen(false);
+  }, [location.pathname]);
 
   // Search handler
   useEffect(() => {
@@ -113,15 +119,16 @@ export default function Topbar({ onMenuToggle }) {
 
   return (
     <header className="topbar">
-      {/* Menu toggle (mobile) */}
-      <button className="topbar-menu-btn" onClick={onMenuToggle} aria-label="Toggle menu">
-        <Menu size={22} />
-      </button>
+      
+      {/* Mobile Logo */}
+      <div className="topbar-mobile-logo" onClick={() => navigate('/')}>
+        B<span>C</span>
+      </div>
 
       {/* Search */}
       <div className="topbar-search" ref={searchRef}>
         <div className="topbar-search-input-wrap">
-          <Search size={16} className="topbar-search-icon" />
+          <Search size={18} className="topbar-search-icon" />
           <input
             type="search"
             placeholder="Search tracks, artists..."
@@ -129,11 +136,11 @@ export default function Topbar({ onMenuToggle }) {
             onChange={(e) => { setSearchQuery(e.target.value); setSearchOpen(true); }}
             onFocus={() => setSearchOpen(true)}
             className="topbar-search-input"
-            id="topbar-search-input"
+            aria-label="Search"
           />
           {searchQuery && (
-            <button className="topbar-search-clear" onClick={() => { setSearchQuery(''); setSearchResults([]); }}>
-              <X size={14} />
+            <button className="topbar-search-clear" onClick={() => { setSearchQuery(''); setSearchResults([]); }} aria-label="Clear Search">
+              <X size={16} />
             </button>
           )}
         </div>
@@ -142,10 +149,7 @@ export default function Topbar({ onMenuToggle }) {
         {searchOpen && searchQuery.trim() && (
           <div className="topbar-search-dropdown">
             {searching ? (
-              <div className="topbar-search-loading">
-                <div className="spinner" style={{ width: 18, height: 18, borderWidth: 2 }} />
-                Searching...
-              </div>
+              <div className="topbar-search-loading">Searching...</div>
             ) : searchResults.length === 0 ? (
               <div className="topbar-search-empty">No results for "{searchQuery}"</div>
             ) : (
@@ -156,21 +160,17 @@ export default function Topbar({ onMenuToggle }) {
                   onClick={() => {
                     if (item.type === 'artist') navigate(`/profile/${item.uid}`);
                     else navigate(`/track/${item.id}`);
-                    setSearchOpen(false);
-                    setSearchQuery('');
                   }}
                 >
                   <div className="topbar-search-result-type">
-                    {item.type === 'artist' ? <User size={12} /> : <Search size={12} />}
+                    {item.type === 'artist' ? <User size={14} /> : <Search size={14} />}
                   </div>
                   <div className="topbar-search-result-info">
                     <div className="topbar-search-result-name">
                       {item.type === 'artist' ? item.username : item.title}
                     </div>
                     <div className="topbar-search-result-sub">
-                      {item.type === 'artist'
-                        ? `${item.stats?.totalLikes || 0} likes · ${item.creatorLevel || 'Rising Artist'}`
-                        : item.username}
+                      {item.type === 'artist' ? 'Artist' : item.username}
                     </div>
                   </div>
                 </button>
@@ -178,9 +178,9 @@ export default function Topbar({ onMenuToggle }) {
             )}
             <button
               className="topbar-search-see-all"
-              onClick={() => { navigate(`/discover?q=${encodeURIComponent(searchQuery)}`); setSearchOpen(false); setSearchQuery(''); }}
+              onClick={() => navigate(`/discover?q=${encodeURIComponent(searchQuery)}`)}
             >
-              See all results →
+              See all results
             </button>
           </div>
         )}
@@ -190,9 +190,9 @@ export default function Topbar({ onMenuToggle }) {
       <div className="topbar-actions">
         {user ? (
           <>
-            {/* Notifications */}
+            {/* Notifications (hidden on mobile, accessible elsewhere if needed) */}
             <div className="topbar-notif-wrap" ref={notifRef}>
-              <button className="topbar-icon-btn" onClick={handleOpenNotifs} aria-label="Notifications" id="notif-bell">
+              <button className="topbar-icon-btn" onClick={handleOpenNotifs} aria-label="Notifications">
                 <Bell size={20} />
                 {unreadCount > 0 && (
                   <span className="topbar-notif-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>
@@ -209,10 +209,7 @@ export default function Topbar({ onMenuToggle }) {
                   </div>
                   <div className="topbar-notif-list">
                     {notifications.length === 0 ? (
-                      <div className="topbar-notif-empty">
-                        <Bell size={24} opacity={0.3} />
-                        <span>No notifications yet</span>
-                      </div>
+                      <div className="topbar-notif-empty">No notifications yet</div>
                     ) : (
                       notifications.map((notif) => (
                         <div key={notif.id} className={`topbar-notif-item${notif.read ? '' : ' unread'}`}>
@@ -226,14 +223,10 @@ export default function Topbar({ onMenuToggle }) {
               )}
             </div>
 
-            {/* Upload button */}
-            <button
-              className="topbar-upload-btn"
-              onClick={() => navigate('/upload')}
-              aria-label="Upload"
-              id="topbar-upload-btn"
-            >
-              <Upload size={18} />
+            {/* Upload button (hidden on mobile, in bottom nav) */}
+            <button className="btn btn-primary topbar-upload-btn desktop-only" onClick={() => navigate('/upload')}>
+              <Upload size={16} />
+              <span style={{marginLeft: 4}}>Upload</span>
             </button>
 
             {/* User menu */}
@@ -241,13 +234,14 @@ export default function Topbar({ onMenuToggle }) {
               <button
                 className="topbar-user-btn"
                 onClick={() => { setUserMenuOpen(!userMenuOpen); setNotifOpen(false); }}
+                aria-label="User Menu"
               >
                 {profile?.avatarUrl ? (
                   <img src={profile.avatarUrl} alt={profile.username} className="topbar-user-avatar" />
                 ) : (
                   <div className="topbar-user-avatar-fallback">{initials}</div>
                 )}
-                <ChevronDown size={14} className={`topbar-chevron ${userMenuOpen ? 'open' : ''}`} />
+                <ChevronDown size={16} className={`topbar-chevron ${userMenuOpen ? 'open' : ''}`} />
               </button>
 
               {userMenuOpen && (
@@ -256,45 +250,24 @@ export default function Topbar({ onMenuToggle }) {
                     <div className="topbar-user-dropdown-name">{profile?.username || 'User'}</div>
                     <CreatorBadge level={profile?.creatorLevel} size="sm" />
                   </div>
-                  <button
-                    className="topbar-user-dropdown-item"
-                    onClick={() => { navigate(`/profile/${user.uid}`); setUserMenuOpen(false); }}
-                  >
-                    <User size={15} />
-                    My Profile
+                  <button className="topbar-user-dropdown-item" onClick={() => navigate(`/profile/${user.uid}`)}>
+                    <User size={18} /> Profile
                   </button>
-                  <button
-                    className="topbar-user-dropdown-item"
-                    onClick={() => { navigate('/upload'); setUserMenuOpen(false); }}
-                  >
-                    <Upload size={15} />
-                    Upload Snippet
+                  <button className="topbar-user-dropdown-item" onClick={() => navigate('/upload')}>
+                    <Upload size={18} /> Upload
                   </button>
-                  {(profile?.plan || 'free') === 'free' && (
-                    <button
-                      className="topbar-user-dropdown-item topbar-upgrade-item"
-                      onClick={() => { navigate('/upgrade'); setUserMenuOpen(false); }}
-                    >
-                      <Crown size={15} />
-                      Upgrade Plan
-                    </button>
-                  )}
                   <div className="topbar-user-dropdown-divider" />
-                  <button
-                    className="topbar-user-dropdown-item topbar-logout-item"
-                    onClick={handleLogout}
-                  >
-                    <LogOut size={15} />
-                    Sign Out
+                  <button className="topbar-user-dropdown-item topbar-logout-item" onClick={handleLogout}>
+                    <LogOut size={18} /> Sign Out
                   </button>
                 </div>
               )}
             </div>
           </>
         ) : (
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn btn-ghost btn-sm" onClick={() => navigate('/login')}>Sign In</button>
-            <button className="btn btn-primary btn-sm" onClick={() => navigate('/register')}>Sign Up</button>
+          <div className="flex gap-2 items-center">
+            <button className="btn btn-ghost" onClick={() => navigate('/login')}>Sign In</button>
+            <button className="btn btn-primary desktop-only" onClick={() => navigate('/register')}>Sign Up</button>
           </div>
         )}
       </div>

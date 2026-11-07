@@ -1,0 +1,375 @@
+/* src/styles/feed.css — Phase 4 Social Feed */
+
+.feed-container {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 24px 16px; 
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+@media (min-width: 1024px) {
+  .feed-container {
+    padding: 32px;
+  }
+}
+
+.feed-page-header {
+  margin-bottom: 8px;
+}
+.feed-page-title {
+  font-size: clamp(1.8rem, 4vw, 2.2rem);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.feed-page-sub {
+  color: var(--text-secondary);
+  font-size: 0.9375rem;
+  max-width: 500px;
+}
+
+/* Filters */
+.feed-filters-wrap {
+  position: sticky;
+  top: var(--topbar-height, 64px);
+  z-index: 40;
+  background: rgba(10, 10, 12, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 12px 0;
+  margin: 0 -16px 8px;
+  border-bottom: 1px solid var(--border-light);
+}
+@media (min-width: 1024px) {
+  .feed-filters-wrap {
+    margin: 0 0 16px;
+    padding: 16px 0;
+  }
+}
+.feed-filters-scroll {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 0 16px;
+  scrollbar-width: none;
+}
+.feed-filters-scroll::-webkit-scrollbar { display: none; }
+.feed-filter-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--bg-elevated);
+  border: 1px solid transparent;
+  border-radius: 99px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.feed-filter-pill:hover {
+  background: var(--bg-glass-hover);
+  color: var(--text-primary);
+}
+.feed-filter-pill.active {
+  background: var(--text-primary);
+  color: var(--bg-primary);
+}
+.feed-filter-count {
+  background: rgba(128,128,128,0.2);
+  padding: 2px 6px;
+  border-radius: 99px;
+  font-size: 0.6875rem;
+}
+.feed-filter-pill.active .feed-filter-count {
+  background: rgba(0,0,0,0.15);
+}
+
+/* Feed Post */
+.feed-post {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: border-color var(--transition-fast);
+}
+.feed-post:hover {
+  border-color: var(--border-accent);
+}
+@media (max-width: 480px) {
+  .feed-post {
+    padding: 16px;
+    border-radius: var(--radius-md);
+  }
+}
+
+/* Post Header (Creator & Context) */
+.feed-post-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.feed-post-creator {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+}
+.feed-post-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-light);
+  flex-shrink: 0;
+}
+.feed-post-avatar.fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: #fff;
+}
+.feed-post-meta {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+}
+.feed-post-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.feed-post-name {
+  font-weight: 700;
+  color: var(--text-primary);
+  font-size: 0.9375rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.feed-post-context {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.feed-post-context-icon {
+  opacity: 0.7;
+}
+.feed-post-time {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* Post Content (Music/Artwork) */
+.feed-post-content {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-light);
+  cursor: pointer;
+  position: relative;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+.feed-post-content:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.feed-post-artwork-wrap {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+@media (max-width: 480px) {
+  .feed-post-artwork-wrap {
+    aspect-ratio: 1; /* Squarer on mobile for more impact */
+  }
+}
+.feed-post-artwork {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.feed-post-artwork.placeholder {
+  color: var(--text-muted);
+}
+.feed-post-play-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+.feed-post-content:hover .feed-post-play-overlay {
+  opacity: 1;
+}
+.feed-post-play-btn {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  transform: scale(0.9);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.feed-post-content:hover .feed-post-play-btn {
+  transform: scale(1);
+}
+/* Always show play button on mobile */
+@media (hover: none) {
+  .feed-post-play-overlay { opacity: 1; background: transparent; }
+  .feed-post-play-btn { transform: scale(1); }
+}
+
+.feed-post-track-info {
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--bg-elevated);
+}
+.feed-post-track-text {
+  flex: 1;
+  min-width: 0;
+}
+.feed-post-track-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 2px;
+}
+.feed-post-track-artist {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+/* Post Content (Non-music, e.g. follow, levelup) */
+.feed-post-text-content {
+  padding: 16px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-md);
+  font-size: 0.9375rem;
+  color: var(--text-primary);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.feed-post-target {
+  font-weight: 700;
+  color: var(--accent);
+  cursor: pointer;
+}
+.feed-post-target:hover {
+  text-decoration: underline;
+}
+
+/* Actions */
+.feed-post-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding-top: 4px;
+}
+.feed-post-action-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px;
+  transition: color var(--transition-fast);
+}
+.feed-post-action-btn:hover {
+  color: var(--text-primary);
+}
+.feed-post-action-btn.share:hover { color: var(--accent); }
+
+/* Skeletons */
+.feed-skeleton {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.feed-skeleton-header { display: flex; gap: 12px; align-items: center; }
+.feed-skeleton-avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--bg-elevated); animation: pulse 1.5s infinite; }
+.feed-skeleton-text-1 { width: 120px; height: 16px; border-radius: 4px; background: var(--bg-elevated); animation: pulse 1.5s infinite; margin-bottom: 6px; }
+.feed-skeleton-text-2 { width: 180px; height: 12px; border-radius: 4px; background: var(--bg-elevated); animation: pulse 1.5s infinite; }
+.feed-skeleton-box { width: 100%; aspect-ratio: 16 / 9; border-radius: var(--radius-md); background: var(--bg-elevated); animation: pulse 1.5s infinite; }
+@media (max-width: 480px) { .feed-skeleton-box { aspect-ratio: 1; } }
+
+.feed-empty {
+  text-align: center;
+  padding: 60px 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.feed-empty-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.feed-empty-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+.feed-empty-sub {
+  color: var(--text-secondary);
+  font-size: 0.9375rem;
+  margin-bottom: 16px;
+}

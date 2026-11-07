@@ -3,6 +3,10 @@
 .env.local
 .env.*.local
 
+# Native app Firebase config — place these locally, never commit (see MOBILE.md)
+android/app/google-services.json
+ios/App/App/GoogleService-Info.plist
+
 # Logs
 logs
 *.log

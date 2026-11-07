@@ -3,6 +3,7 @@ import { Music, PlayCircle, Trash2, Search, AlertCircle } from 'lucide-react';
 import { getAllAdminTracks, deleteTrackAdmin } from '../../firebase/firestore';
 import { usePlayer } from '../../context/PlayerContext';
 import toast from 'react-hot-toast';
+import '../../styles/admin.css';
 
 export default function AdminTracks() {
   const { playQueue } = usePlayer();
@@ -52,38 +53,40 @@ export default function AdminTracks() {
   );
 
   return (
-    <div className="page animate-fade-in" style={{ maxWidth: 1000, margin: '0 auto' }}>
-      <div className="section-header" style={{ marginBottom: 30, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <Music size={28} color="var(--accent)" />
-          <h1 style={{ margin: 0 }}>Content Moderation: Tracks</h1>
+    <div className="admin-workspace animate-fade-in">
+      <div className="admin-header">
+        <div className="admin-title-group">
+          <div className="admin-title-icon" style={{ background: 'var(--accent-soft)' }}>
+            <Music size={28} color="var(--accent)" />
+          </div>
+          <div>
+            <h1 className="admin-title">Content Moderation: Tracks</h1>
+            <p className="admin-subtitle">Monitor and delete tracks if necessary.</p>
+          </div>
+        </div>
+        
+        <div className="input-wrapper" style={{ width: '300px' }}>
+          <Search size={18} className="input-icon" />
+          <input
+            type="search"
+            placeholder="Search tracks by title or artist..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="input input-with-icon"
+          />
         </div>
       </div>
 
-      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
-        <div style={{ padding: '20px', borderBottom: '1px solid var(--border)', display: 'flex', gap: '16px', alignItems: 'center' }}>
-          <div className="input-group" style={{ flex: 1, margin: 0 }}>
-            <div className="input-wrapper">
-              <Search className="input-icon" size={18} />
-              <input
-                className="input input-with-icon"
-                placeholder="Search tracks by title or artist..."
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-              />
-            </div>
-          </div>
-        </div>
-
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+      <div className="admin-panel">
+        <div className="admin-table-container">
+          <table className="admin-table">
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                <th style={{ padding: '16px 20px', fontWeight: 600 }}>Track Info</th>
-                <th style={{ padding: '16px 20px', fontWeight: 600 }}>Artist</th>
-                <th style={{ padding: '16px 20px', fontWeight: 600 }}>Stats</th>
-                <th style={{ padding: '16px 20px', fontWeight: 600 }}>Upload Date</th>
-                <th style={{ padding: '16px 20px', fontWeight: 600, textAlign: 'right' }}>Actions</th>
+              <tr>
+                <th>Track Info</th>
+                <th>Artist</th>
+                <th>Stats</th>
+                <th>Upload Date</th>
+                <th style={{ textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -101,8 +104,8 @@ export default function AdminTracks() {
                 </tr>
               ) : (
                 filteredTracks.map(track => (
-                  <tr key={track.id} style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.2s' }}>
-                    <td style={{ padding: '16px 20px' }}>
+                  <tr key={track.id}>
+                    <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         {track.coverUrl ? (
                           <img src={track.coverUrl} alt={track.title} style={{ width: 40, height: 40, borderRadius: 8, objectFit: 'cover' }} />
@@ -119,17 +122,17 @@ export default function AdminTracks() {
                         </div>
                       </div>
                     </td>
-                    <td style={{ padding: '16px 20px', fontSize: '0.875rem' }}>
+                    <td>
                       {track.username || 'Unknown'}
                     </td>
-                    <td style={{ padding: '16px 20px', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                    <td style={{ color: 'var(--text-secondary)' }}>
                       {track.likes || 0} Likes
                     </td>
-                    <td style={{ padding: '16px 20px', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                    <td style={{ color: 'var(--text-secondary)' }}>
                       {track.createdAt?.seconds ? new Date(track.createdAt.seconds * 1000).toLocaleDateString() : 'N/A'}
                     </td>
-                    <td style={{ padding: '16px 20px', textAlign: 'right' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>
+                    <td style={{ textAlign: 'right' }}>
+                      <div className="admin-action-row">
                         <button 
                           className="btn-icon"
                           onClick={() => handlePlay(track)}
@@ -139,10 +142,9 @@ export default function AdminTracks() {
                           <PlayCircle size={18} />
                         </button>
                         <button 
-                          className="btn-icon"
+                          className="btn-icon admin-danger-text"
                           onClick={() => handleDelete(track.id, track.uid)}
                           title="Delete Track"
-                          style={{ color: '#ef4444' }}
                         >
                           <Trash2 size={18} />
                         </button>

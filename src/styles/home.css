@@ -1,0 +1,501 @@
+/* src/styles/home.css — Home / Discovery Experience Redesign */
+
+.home-container {
+  padding: 24px 32px;
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+@media (max-width: 768px) {
+  .home-container {
+    padding: 16px;
+    gap: 24px;
+  }
+}
+
+/* 1. Hero / Welcome */
+.home-welcome {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.home-greeting {
+  font-size: clamp(1.8rem, 4vw, 2.4rem);
+  font-weight: 800;
+  font-family: 'Outfit', sans-serif;
+  letter-spacing: -0.03em;
+  margin-bottom: 4px;
+  background: linear-gradient(135deg, #fff 40%, var(--accent-bright));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.home-subtitle {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* 2. Featured / Spotlight */
+.home-spotlight {
+  position: relative;
+  height: 320px;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  padding: 32px;
+  box-shadow: var(--shadow-lg);
+  cursor: pointer;
+  transition: transform var(--transition-base);
+}
+@media (max-width: 768px) {
+  .home-spotlight {
+    height: 280px;
+    padding: 20px;
+    border-radius: var(--radius-lg);
+  }
+}
+.home-spotlight:hover {
+  transform: translateY(-2px);
+}
+.spotlight-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  transition: transform 10s ease;
+}
+.home-spotlight:hover .spotlight-bg {
+  transform: scale(1.05);
+}
+.spotlight-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(10, 10, 12, 0.95) 0%, rgba(10, 10, 12, 0.4) 50%, transparent 100%);
+}
+.spotlight-content {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.spotlight-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: var(--radius-round);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  align-self: flex-start;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+.spotlight-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.spotlight-title {
+  font-size: clamp(1.8rem, 4vw, 2.5rem);
+  font-weight: 900;
+  color: #fff;
+  line-height: 1.1;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.5);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.spotlight-artist {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 600;
+}
+.spotlight-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 8px;
+}
+.spotlight-play {
+  padding: 10px 24px;
+  border-radius: var(--radius-round);
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.spotlight-play:hover {
+  background: var(--accent-bright);
+  transform: scale(1.05);
+}
+
+/* 3. Trending Music (Horizontal Scroll) */
+.home-section-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.home-section-header h2 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.home-see-all {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: color var(--transition-fast);
+}
+.home-see-all:hover {
+  color: var(--text-primary);
+}
+
+.home-horizontal-scroll {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding-bottom: 16px;
+  margin-bottom: -16px;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* Firefox */
+}
+.home-horizontal-scroll::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+.home-track-card {
+  width: 160px;
+  flex-shrink: 0;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  cursor: pointer;
+  group: track-card;
+}
+@media (max-width: 768px) {
+  .home-track-card {
+    width: 140px;
+  }
+}
+.home-track-cover-wrap {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  position: relative;
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-sm);
+}
+.home-track-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--transition-base);
+}
+.home-track-cover.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+}
+.home-track-card:hover .home-track-cover {
+  transform: scale(1.05);
+}
+.home-track-play-btn {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: all var(--transition-fast);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+/* Show play button on hover on desktop, or always on mobile */
+@media (hover: hover) {
+  .home-track-card:hover .home-track-play-btn {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (hover: none) {
+  .home-track-play-btn {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.home-track-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.home-track-title {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.home-track-artist {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 4. Grid Layout for remaining sections */
+.home-grid-layout {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 32px;
+}
+@media (max-width: 1024px) {
+  .home-grid-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 5. Discover Creators */
+.home-creators-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+}
+.home-creator-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.home-creator-card:hover {
+  background: var(--bg-elevated);
+  border-color: var(--border-accent);
+  transform: translateY(-2px);
+}
+.home-creator-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--bg-elevated);
+  border: 2px solid var(--bg-card);
+  box-shadow: var(--shadow-sm);
+}
+.home-creator-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.home-creator-avatar .placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: var(--bg-secondary);
+}
+.home-creator-name {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+
+/* 6. Community Activity (Feed) */
+.home-feed-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.home-feed-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+.home-feed-item:hover {
+  background: var(--bg-elevated);
+}
+.home-feed-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.home-feed-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.home-feed-avatar .placeholder {
+  width: 100%;
+  height: 100%;
+  background: var(--accent-soft);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+.home-feed-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+.home-feed-name {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.home-feed-track {
+  font-weight: 600;
+  color: var(--accent);
+}
+.home-feed-time {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* 7. Weekly Winners */
+.home-award-card {
+  background: linear-gradient(135deg, rgba(250, 204, 21, 0.1), rgba(250, 204, 21, 0.05));
+  border: 1px solid rgba(250, 204, 21, 0.2);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+}
+.home-award-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  color: #facc15;
+}
+.home-award-header h3 {
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.home-award-winners {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.home-award-winner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+}
+.home-award-rank {
+  font-size: 1.2rem;
+  font-weight: 900;
+  color: #facc15;
+  width: 32px;
+  text-align: center;
+}
+.home-award-info {
+  display: flex;
+  flex-direction: column;
+}
+.home-award-cat {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.home-award-name {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.home-award-empty {
+  text-align: center;
+  padding: 20px 0;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+.home-award-empty button {
+  margin-top: 16px;
+}
+
+/* Common Layout */
+.home-vertical-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.skeleton-hero {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  animation: pulse 1.5s infinite;
+}
+@keyframes pulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 0.3; }
+  100% { opacity: 0.6; }
+}

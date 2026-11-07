@@ -73,7 +73,7 @@ export default function Videos() {
     setIsSearching(false);
   };
 
-  const displayVideos = isSearching ? searchResults : videos;
+  const displayVideos = (isSearching ? searchResults : videos).filter(v => !v.isReel);
 
 
   return (

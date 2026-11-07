@@ -1,13 +1,13 @@
 // src/components/track/TrackCard.jsx
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Play, Pause, Music, Flame, TrendingUp, Trash2, Share2 } from 'lucide-react';
+import { Play, Pause, Music, Flame, Trash2, Share2 } from 'lucide-react';
 import { usePlayer } from '../../context/PlayerContext';
 import { useAuth } from '../../context/AuthContext';
 import { deleteTrack } from '../../firebase/firestore';
 import toast from 'react-hot-toast';
 import LikeButton from './LikeButton';
-import CreatorBadge from '../common/CreatorBadge';
+
 import ShareToChatModal from './ShareToChatModal';
 import '../../styles/components.css';
 

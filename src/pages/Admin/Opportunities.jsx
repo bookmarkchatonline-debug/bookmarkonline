@@ -4,6 +4,7 @@ import { Calendar, Plus, Trash2, CheckCircle, Zap } from 'lucide-react';
 import { db } from '../../firebase/config';
 import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, query, orderBy } from 'firebase/firestore';
 import toast from 'react-hot-toast';
+import '../../styles/admin.css';
 
 export default function AdminOpportunities() {
   const [opportunities, setOpportunities] = useState([]);
@@ -81,17 +82,22 @@ export default function AdminOpportunities() {
   };
 
   return (
-    <div className="page animate-fade-in" style={{ maxWidth: 900, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 }}>
+    <div className="admin-workspace animate-fade-in" style={{ flexDirection: 'row', gap: 32, flexWrap: 'wrap' }}>
       
-      <div>
-        <div className="section-header" style={{ marginBottom: 24 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <Calendar size={24} color="var(--accent)" />
-            <h2 style={{ margin: 0 }}>Create Opportunity</h2>
+      <div style={{ flex: '1 1 400px' }}>
+        <div className="admin-header">
+          <div className="admin-title-group">
+            <div className="admin-title-icon" style={{ background: 'var(--accent-soft)' }}>
+              <Calendar size={28} color="var(--accent)" />
+            </div>
+            <div>
+              <h2 className="admin-title" style={{ fontSize: '1.5rem' }}>Create Opportunity</h2>
+            </div>
           </div>
         </div>
 
-        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div className="admin-panel">
+          <div className="admin-form-group">
           <div className="input-group">
             <label className="input-label">Title</label>
             <input className="input" value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Summer Beat Battle" />
@@ -138,15 +144,20 @@ export default function AdminOpportunities() {
             <span style={{ fontSize: '0.9rem', color: isUrgent ? '#ef4444' : 'var(--text-primary)' }}><Zap size={14} style={{ display: 'inline', marginBottom: -2 }}/> Mark as Urgent/Ending Soon</span>
           </label>
 
-          <button className="btn btn-primary" onClick={handleCreate} disabled={submitting} style={{ marginTop: 8 }}>
-            <Plus size={16} /> Create Opportunity
-          </button>
+            <button className="btn btn-primary" onClick={handleCreate} disabled={submitting} style={{ marginTop: 8 }}>
+              <Plus size={16} /> Create Opportunity
+            </button>
+          </div>
         </div>
       </div>
 
-      <div>
-        <div className="section-header" style={{ marginBottom: 24 }}>
-          <h2 style={{ margin: 0, fontSize: '1.2rem' }}>Active Opportunities</h2>
+      <div style={{ flex: '1 1 400px' }}>
+        <div className="admin-header">
+          <div className="admin-title-group">
+            <div>
+              <h2 className="admin-title" style={{ fontSize: '1.5rem' }}>Active Opportunities</h2>
+            </div>
+          </div>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -156,18 +167,18 @@ export default function AdminOpportunities() {
             <div className="empty-state">No active opportunities.</div>
           ) : (
             opportunities.map(opp => (
-              <div key={opp.id} style={{ background: 'var(--bg-glass)', border: `1px solid ${opp.isUrgent ? 'rgba(239,68,68,0.3)' : 'var(--border)'}`, borderRadius: 'var(--radius-md)', padding: 16 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+              <div key={opp.id} className="admin-card-item" style={{ border: opp.isUrgent ? '1px solid rgba(239,68,68,0.3)' : undefined }}>
+                <div className="admin-card-header">
                   <div>
                     <div style={{ fontSize: '0.65rem', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 700 }}>{opp.type}</div>
-                    <div style={{ fontWeight: 700, fontSize: '1rem' }}>{opp.title}</div>
+                    <div className="admin-card-title">{opp.title}</div>
                   </div>
-                  <button className="btn-icon" style={{ color: '#ef4444' }} onClick={() => handleDelete(opp.id)}>
+                  <button className="btn-icon admin-danger-text" onClick={() => handleDelete(opp.id)}>
                     <Trash2 size={16} />
                   </button>
                 </div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 8 }}>{opp.description}</div>
-                <div style={{ display: 'flex', gap: 16, fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{opp.description}</div>
+                <div className="admin-card-meta">
                   <div><strong>Deadline:</strong> {opp.deadline}</div>
                   {opp.prize && <div><strong>Prize:</strong> {opp.prize}</div>}
                 </div>
