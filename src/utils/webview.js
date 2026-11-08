@@ -65,7 +65,7 @@ export function hasNativeGoogleSignInBridge() {
       window.bookmarkchatNative?.requestGoogleSignIn ||
       window.Android?.requestGoogleSignIn ||
       window.webkit?.messageHandlers?.bookmarkchatGoogleSignIn ||
-      window.ReactNativeWebView?.postMessage
+      window.__NATIVE_GOOGLE_SIGN_IN_AVAILABLE__ === true
   );
 }
 

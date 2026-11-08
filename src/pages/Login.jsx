@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import { loginWithEmail, loginWithGoogle } from '../firebase/auth';
+import { loginWithEmail, loginWithGoogle, getFriendlyAuthErrorMessage } from '../firebase/auth';
 import {
   hasNativeGoogleSignInBridge,
   isNativeWebView,
@@ -19,13 +19,22 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      setError('Please enter your email address.');
+      return;
+    }
+    if (!password) {
+      setError('Please enter your password.');
+      return;
+    }
     setLoading(true);
     try {
-      await loginWithEmail(email, password);
+      await loginWithEmail(trimmedEmail, password);
       toast.success('Welcome back!');
       navigate('/');
     } catch (err) {
-      setError(err.message.replace('Firebase: ', '').replace(/\(auth.*\)\.?/, '').trim());
+      setError(getFriendlyAuthErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -35,15 +44,22 @@ export default function Login() {
     setLoading(true);
     setError('');
     try {
-      if (isNativeWebView() && hasNativeGoogleSignInBridge()) {
+      if (hasNativeGoogleSignInBridge()) {
         await requestNativeGoogleSignIn('artist');
+      } else if (isNativeWebView()) {
+        // In embedded mobile WebViews (Expo Go / WebView), Google blocks popup OAuth.
+        setError(
+          'Google Sign-In is only available in the standalone installed app or desktop browser. Please sign in with your email and password below, or tap "Join free" to create an account.'
+        );
+        setLoading(false);
+        return;
       } else {
         await loginWithGoogle();
       }
       toast.success('Welcome back!');
       navigate('/');
     } catch (err) {
-      setError(err.message.replace('Firebase: ', '').trim());
+      setError(getFriendlyAuthErrorMessage(err));
     } finally {
       setLoading(false);
     }

@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, User, ArrowRight, ArrowLeft } from 'lucide-react';
-import { registerWithEmail as register, loginWithGoogle } from '../firebase/auth';
+import { registerWithEmail as register, loginWithGoogle, getFriendlyAuthErrorMessage } from '../firebase/auth';
 import {
   hasNativeGoogleSignInBridge,
   isNativeWebView,
@@ -13,6 +13,7 @@ import toast from 'react-hot-toast';
 export default function Register() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -23,24 +24,30 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
     
     if (formData.password !== formData.confirmPassword) {
-      toast.error('Passwords do not match');
+      setError('Passwords do not match.');
       return;
     }
     
-    if (formData.username.length < 3) {
-      toast.error('Username must be at least 3 characters');
+    if (formData.username.trim().length < 3) {
+      setError('Username must be at least 3 characters.');
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters.');
       return;
     }
 
     setLoading(true);
     try {
-      await register(formData.email, formData.password, formData.username, formData.role);
+      await register(formData.email.trim(), formData.password, formData.username.trim(), formData.role);
       toast.success('Account created successfully!');
       navigate('/');
     } catch (err) {
-      toast.error(err.message || 'Failed to create account');
+      setError(getFriendlyAuthErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -49,15 +56,23 @@ export default function Register() {
   const handleSocialLogin = async (provider) => {
     if (provider !== 'google') return;
     setLoading(true);
+    setError('');
     try {
-      if (isNativeWebView() && hasNativeGoogleSignInBridge()) {
+      if (hasNativeGoogleSignInBridge()) {
         await requestNativeGoogleSignIn(formData.role);
+      } else if (isNativeWebView()) {
+        setError(
+          'Google Sign-In is only available in the standalone installed app or desktop browser. Please register with your email and password above.'
+        );
+        setLoading(false);
+        return;
       } else {
         await loginWithGoogle(formData.role);
       }
+      toast.success('Welcome to BookmarkChat!');
       navigate('/');
     } catch (err) {
-      toast.error(err.message || `Failed to sign in with ${provider}`);
+      setError(getFriendlyAuthErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -78,6 +93,7 @@ export default function Register() {
         </div>
 
         <form onSubmit={handleSubmit} className="auth-form">
+          {error && <div className="auth-error">{error}</div>}
           <div className="input-group">
             <label className="input-label">Username</label>
             <div className="input-wrapper">
