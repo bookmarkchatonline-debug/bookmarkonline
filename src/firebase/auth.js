@@ -6,6 +6,7 @@ import {
   signInWithCredential,
   signOut,
   updateProfile,
+  sendPasswordResetEmail,
   GoogleAuthProvider,
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
@@ -46,6 +47,13 @@ export function getFriendlyAuthErrorMessage(err) {
   if (code.includes('network-request-failed')) {
     return 'Network connection failed. Please check your internet connection.';
   }
+  if (
+    code.includes('unavailable') ||
+    message.includes('unavailable') ||
+    message.includes('service-is-currently-unavailable')
+  ) {
+    return 'The authentication server is temporarily unavailable or your connection timed out. Please check your internet connection and try again in a few moments.';
+  }
   if (code.includes('popup-blocked') || code.includes('popup-closed')) {
     return 'Sign-in window was blocked or closed. Please sign in with email and password.';
   }
@@ -58,7 +66,7 @@ export function getFriendlyAuthErrorMessage(err) {
 
   const clean = (err.message || '')
     .replace(/^Firebase:\s*/i, '')
-    .replace(/\s*\(auth\/[a-z0-9-]+\)\.?/i, '')
+    .replace(/\s*\(auth\/[^)]+\)\.?/i, '')
     .trim();
 
   return clean && clean.toLowerCase() !== 'error'
@@ -146,6 +154,14 @@ export async function registerWithEmail(email, password, username, role = 'artis
 export async function loginWithEmail(email, password) {
   const cred = await signInWithEmailAndPassword(auth, email, password);
   return cred.user;
+}
+
+/** Send password reset email */
+export async function resetPassword(email) {
+  if (!email || !email.trim()) {
+    throw new Error('Please enter your email address to receive a password reset link.');
+  }
+  await sendPasswordResetEmail(auth, email.trim());
 }
 
 /** Sign in with Google (browser) — creates Firestore profile if first time */

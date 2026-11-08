@@ -80,9 +80,11 @@ export default function Register() {
 
   return (
     <div className="auth-container">
-      <button className="auth-back-btn" onClick={() => navigate('/')}>
-        <ArrowLeft size={16} /> Back to Home
-      </button>
+      <div className="auth-top-bar">
+        <button className="auth-back-btn" onClick={() => navigate('/')}>
+          <ArrowLeft size={16} /> Back to Home
+        </button>
+      </div>
       <div className="auth-card">
         <div className="auth-header">
           <div className="auth-logo">
@@ -93,7 +95,18 @@ export default function Register() {
         </div>
 
         <form onSubmit={handleSubmit} className="auth-form">
-          {error && <div className="auth-error">{error}</div>}
+          {error && (
+            <div className="auth-error">
+              {error}
+              {(error.includes('already exists') || error.includes('sign in instead')) && (
+                <div style={{ marginTop: '8px' }}>
+                  <Link to="/login" style={{ color: '#fff', textDecoration: 'underline', fontWeight: 'bold' }}>
+                    Click here to Sign In →
+                  </Link>
+                </div>
+              )}
+            </div>
+          )}
           <div className="input-group">
             <label className="input-label">Username</label>
             <div className="input-wrapper">

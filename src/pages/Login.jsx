@@ -1,7 +1,12 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import { loginWithEmail, loginWithGoogle, getFriendlyAuthErrorMessage } from '../firebase/auth';
+import {
+  loginWithEmail,
+  loginWithGoogle,
+  resetPassword,
+  getFriendlyAuthErrorMessage,
+} from '../firebase/auth';
 import {
   hasNativeGoogleSignInBridge,
   isNativeWebView,
@@ -15,6 +20,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [resetSent, setResetSent] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -40,6 +46,25 @@ export default function Login() {
     }
   };
 
+  const handleForgotPassword = async () => {
+    setError('');
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      setError('Please enter your email above first, then click "Forgot password?".');
+      return;
+    }
+    setLoading(true);
+    try {
+      await resetPassword(trimmedEmail);
+      setResetSent(true);
+      toast.success('Password reset email sent! Check your inbox.');
+    } catch (err) {
+      setError(getFriendlyAuthErrorMessage(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleGoogle = async () => {
     setLoading(true);
     setError('');
@@ -47,7 +72,6 @@ export default function Login() {
       if (hasNativeGoogleSignInBridge()) {
         await requestNativeGoogleSignIn('artist');
       } else if (isNativeWebView()) {
-        // In embedded mobile WebViews (Expo Go / WebView), Google blocks popup OAuth.
         setError(
           'Google Sign-In is only available in the standalone installed app or desktop browser. Please sign in with your email and password below, or tap "Join free" to create an account.'
         );
@@ -67,9 +91,11 @@ export default function Login() {
 
   return (
     <div className="auth-container">
-      <button className="auth-back-btn" onClick={() => navigate('/')}>
-        <ArrowLeft size={16} /> Back to Home
-      </button>
+      <div className="auth-top-bar">
+        <button className="auth-back-btn" onClick={() => navigate('/')}>
+          <ArrowLeft size={16} /> Back to Home
+        </button>
+      </div>
       <div className="auth-bg-orb auth-bg-orb-1" />
       <div className="auth-bg-orb auth-bg-orb-2" />
 
@@ -83,7 +109,24 @@ export default function Login() {
         </div>
 
         <form onSubmit={handleSubmit} className="auth-form" id="login-form">
-          {error && <div className="auth-error">{error}</div>}
+          {error && (
+            <div className="auth-error">
+              {error}
+              {error.includes('Join free') && (
+                <div style={{ marginTop: '8px' }}>
+                  <Link to="/register" style={{ color: '#fff', textDecoration: 'underline', fontWeight: 'bold' }}>
+                    Click here to create an account →
+                  </Link>
+                </div>
+              )}
+            </div>
+          )}
+
+          {resetSent && (
+            <div style={{ background: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)', color: '#10b981', padding: '12px', borderRadius: '12px', fontSize: '0.875rem', textAlign: 'center' }}>
+              Password reset link sent to <strong>{email}</strong>. Check your spam/inbox.
+            </div>
+          )}
 
           <div className="input-group">
             <label className="input-label" htmlFor="login-email">Email</label>
@@ -103,7 +146,16 @@ export default function Login() {
           </div>
 
           <div className="input-group">
-            <label className="input-label" htmlFor="login-password">Password</label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <label className="input-label" htmlFor="login-password">Password</label>
+              <button
+                type="button"
+                onClick={handleForgotPassword}
+                style={{ fontSize: '0.8125rem', color: '#ff5c77', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+              >
+                Forgot password?
+              </button>
+            </div>
             <div className="input-wrapper">
               <svg className="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
               <input
