@@ -15,8 +15,33 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { WebView } from 'react-native-webview';
 
-const DEFAULT_PROD_URL = 'https://bookmarkchat.online';
+// Using www directly avoids the 308 redirect from non-www to www on Vercel
+const DEFAULT_PROD_URL = 'https://www.bookmarkchat.online';
 const DEFAULT_LOCAL_URL = 'http://192.168.0.9:5173';
+
+// Injected JS to catch any unhandled page errors and forward to native
+const INJECTED_DEBUG_JS = `
+  (function() {
+    window.onerror = function(message, source, lineno, colno, error) {
+      window.ReactNativeWebView && window.ReactNativeWebView.postMessage(JSON.stringify({
+        type: 'WEB_ERROR',
+        message: String(message),
+        source: String(source),
+        line: lineno
+      }));
+    };
+    var originalError = console.error;
+    console.error = function() {
+      var args = Array.prototype.slice.call(arguments);
+      window.ReactNativeWebView && window.ReactNativeWebView.postMessage(JSON.stringify({
+        type: 'CONSOLE_ERROR',
+        message: args.map(function(a) { return (typeof a === 'object') ? JSON.stringify(a) : String(a); }).join(' ')
+      }));
+      originalError.apply(console, arguments);
+    };
+  })();
+  true;
+`;
 
 export default function App() {
   const [currentUrl, setCurrentUrl] = useState(DEFAULT_PROD_URL);
@@ -25,6 +50,7 @@ export default function App() {
   const [canGoBack, setCanGoBack] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [pageLoading, setPageLoading] = useState(true);
   const webViewRef = useRef(null);
 
   // Android hardware back-button handler
@@ -52,6 +78,8 @@ export default function App() {
           'Google Sign-In',
           'Native Google Sign-In request received from BookmarkChat webview bridge.'
         );
+      } else if (data?.type === 'WEB_ERROR' || data?.type === 'CONSOLE_ERROR') {
+        console.warn('WebView Page Error:', data.message);
       }
     } catch {
       // Non-JSON message
@@ -60,6 +88,7 @@ export default function App() {
 
   const handleSelectUrl = (url) => {
     setHasError(false);
+    setPageLoading(true);
     setCurrentUrl(url);
     setSettingsVisible(false);
   };
@@ -71,13 +100,22 @@ export default function App() {
 
         {/* Top Mini Control Strip */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle} numberOfLines={1}>
-            BookmarkChat • <Text style={styles.headerSub}>{currentUrl.replace('https://', '').replace('http://', '')}</Text>
-          </Text>
+          <TouchableOpacity
+            style={styles.headerTitleWrap}
+            onPress={() => setSettingsVisible(true)}
+          >
+            <Text style={styles.headerTitle} numberOfLines={1}>
+              BookmarkChat • <Text style={styles.headerSub}>{currentUrl.replace('https://', '').replace('http://', '').replace('www.', '')}</Text>
+            </Text>
+          </TouchableOpacity>
           <View style={styles.headerButtons}>
             <TouchableOpacity
               style={styles.headerBtn}
-              onPress={() => webViewRef.current?.reload()}
+              onPress={() => {
+                setPageLoading(true);
+                setHasError(false);
+                webViewRef.current?.reload();
+              }}
               accessibilityLabel="Reload page"
             >
               <Text style={styles.headerBtnText}>↻</Text>
@@ -87,7 +125,7 @@ export default function App() {
               onPress={() => setSettingsVisible(true)}
               accessibilityLabel="Switch Server"
             >
-              <Text style={styles.headerBtnText}>⚙</Text>
+              <Text style={styles.headerBtnText}>⚙ Server</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -103,7 +141,11 @@ export default function App() {
               </Text>
               <TouchableOpacity
                 style={styles.actionBtn}
-                onPress={() => webViewRef.current?.reload()}
+                onPress={() => {
+                  setHasError(false);
+                  setPageLoading(true);
+                  webViewRef.current?.reload();
+                }}
               >
                 <Text style={styles.actionBtnText}>Retry Connection</Text>
               </TouchableOpacity>
@@ -129,28 +171,42 @@ export default function App() {
               mediaPlaybackRequiresUserAction={false}
               javaScriptEnabled={true}
               domStorageEnabled={true}
-              allowsBackForwardNavigationGestures={true}
+              thirdPartyCookiesEnabled={true}
               sharedCookiesEnabled={true}
               mixedContentMode="always"
               originWhitelist={['*']}
-              userAgent="Mozilla/5.0 (Linux; Android 10; BookmarkChatMobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Mobile Safari/537.36 BookmarkChatExpo/1.0"
+              setSupportMultipleWindows={false}
+              javaScriptCanOpenWindowsAutomatically={true}
+              injectedJavaScript={INJECTED_DEBUG_JS}
               onNavigationStateChange={(navState) => setCanGoBack(navState.canGoBack)}
+              onLoadStart={() => setPageLoading(true)}
+              onLoadEnd={() => setPageLoading(false)}
               onMessage={handleMessage}
               onError={(syntheticEvent) => {
                 const { nativeEvent } = syntheticEvent;
                 setHasError(true);
+                setPageLoading(false);
                 setErrorMessage(nativeEvent.description || 'Connection failed');
               }}
-              renderLoading={() => (
-                <View style={styles.loadingContainer}>
-                  <Text style={styles.logoText}>
-                    BOOKMARK<Text style={{ color: '#a855f7' }}>CHAT</Text>
-                  </Text>
-                  <ActivityIndicator size="large" color="#a855f7" style={{ marginTop: 16 }} />
-                </View>
-              )}
-              startInLoadingState={true}
+              onHttpError={(syntheticEvent) => {
+                const { nativeEvent } = syntheticEvent;
+                if (nativeEvent.statusCode >= 400) {
+                  setHasError(true);
+                  setPageLoading(false);
+                  setErrorMessage(`HTTP Error ${nativeEvent.statusCode}: ${nativeEvent.description}`);
+                }
+              }}
             />
+          )}
+
+          {pageLoading && !hasError && (
+            <View style={styles.loadingContainer} pointerEvents="none">
+              <Text style={styles.logoText}>
+                BOOKMARK<Text style={{ color: '#a855f7' }}>CHAT</Text>
+              </Text>
+              <ActivityIndicator size="large" color="#a855f7" style={{ marginTop: 16 }} />
+              <Text style={styles.loadingSub}>Loading application...</Text>
+            </View>
           )}
         </View>
 
@@ -165,7 +221,7 @@ export default function App() {
             <View style={styles.modalContent}>
               <Text style={styles.modalTitle}>Select BookmarkChat Server</Text>
               <Text style={styles.modalSub}>
-                Choose between the live production deployment or your local development server.
+                Choose between the live production deployment or your local development machine.
               </Text>
 
               <TouchableOpacity
@@ -173,15 +229,15 @@ export default function App() {
                 onPress={() => handleSelectUrl(DEFAULT_PROD_URL)}
               >
                 <Text style={styles.presetTitle}>🌐 Live Production</Text>
-                <Text style={styles.presetSub}>https://bookmarkchat.online</Text>
+                <Text style={styles.presetSub}>https://www.bookmarkchat.online</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[styles.presetBtn, currentUrl === DEFAULT_LOCAL_URL && styles.presetBtnActive]}
                 onPress={() => handleSelectUrl(DEFAULT_LOCAL_URL)}
               >
-                <Text style={styles.presetTitle}>💻 Local Dev Server (Default Wi-Fi)</Text>
-                <Text style={styles.presetSub}>http://192.168.0.9:5173</Text>
+                <Text style={styles.presetTitle}>💻 Local Dev Server (PC on Wi-Fi)</Text>
+                <Text style={styles.presetSub}>http://192.168.0.9:5173 (Requires 'npm run dev -- --host')</Text>
               </TouchableOpacity>
 
               <View style={styles.customSection}>
@@ -229,7 +285,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#0b0713',
   },
   header: {
-    height: 38,
+    height: 42,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -238,12 +294,14 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#1e1633',
   },
+  headerTitleWrap: {
+    flex: 1,
+    marginRight: 8,
+  },
   headerTitle: {
     fontSize: 12,
     fontWeight: '700',
     color: '#a855f7',
-    flex: 1,
-    marginRight: 8,
   },
   headerSub: {
     fontSize: 11,
@@ -253,20 +311,21 @@ const styles = StyleSheet.create({
   headerButtons: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
   },
   headerBtn: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     backgroundColor: '#1c1530',
     borderRadius: 6,
   },
   headerBtnSettings: {
-    backgroundColor: '#281a44',
+    backgroundColor: '#7c3aed',
   },
   headerBtnText: {
-    color: '#d4cced',
-    fontSize: 13,
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '600',
   },
   webviewWrapper: {
     flex: 1,
@@ -284,13 +343,18 @@ const styles = StyleSheet.create({
     right: 0,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#0b0713',
+    backgroundColor: 'rgba(11, 7, 19, 0.92)',
   },
   logoText: {
     fontSize: 22,
     fontWeight: '800',
     color: '#ffffff',
     letterSpacing: -0.5,
+  },
+  loadingSub: {
+    marginTop: 8,
+    color: '#8e86a0',
+    fontSize: 12,
   },
   errorContainer: {
     flex: 1,
