@@ -267,6 +267,10 @@ h3 { font-size: 1.25rem; font-weight: 600; }
   font-size: 0.9375rem;
   transition: all var(--transition-fast);
 }
+.input.input-with-icon,
+.input-with-icon {
+  padding-left: 48px !important;
+}
 .input::placeholder { color: var(--text-muted); }
 .input:focus {
   background: var(--bg-elevated);

@@ -71,7 +71,7 @@ export default function Register() {
       <div className="auth-card">
         <div className="auth-header">
           <div className="auth-logo">
-            <img src="/mainlogo2.png" alt="BookmarkChat Logo" style={{ height: '40px', width: 'auto', objectFit: 'contain' }} />
+            <img src="/mainlogo2.png" alt="BookmarkChat Logo" style={{ height: '40px', width: 'auto', objectFit: 'contain', display: 'block', margin: '0 auto' }} />
           </div>
           <h1 className="auth-title">Join the Movement</h1>
           <p className="auth-subtitle">Create your artist profile and start sharing your sound.</p>
