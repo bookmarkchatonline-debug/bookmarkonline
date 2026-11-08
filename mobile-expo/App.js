@@ -3,13 +3,13 @@ import {
   StyleSheet,
   View,
   Text,
-  TextInput,
   TouchableOpacity,
+  TextInput,
   Modal,
   BackHandler,
-  ActivityIndicator,
-  Alert,
   Platform,
+  Alert,
+  Animated,
 } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -44,14 +44,25 @@ const INJECTED_DEBUG_JS = `
 `;
 
 export default function App() {
-  const [currentUrl, setCurrentUrl] = useState(DEFAULT_PROD_URL);
+  const [currentUrl, setCurrentUrl] = useState(DEFAULT_LOCAL_URL);
   const [customInput, setCustomInput] = useState(DEFAULT_LOCAL_URL);
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [canGoBack, setCanGoBack] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [pageLoading, setPageLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadProgress, setLoadProgress] = useState(0);
   const webViewRef = useRef(null);
+
+  // Safety timer: ensure loading indicator never stays stuck longer than 2.5 seconds
+  useEffect(() => {
+    if (isLoading) {
+      const timer = setTimeout(() => {
+        setIsLoading(false);
+      }, 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading]);
 
   // Android hardware back-button handler
   useEffect(() => {
@@ -88,31 +99,41 @@ export default function App() {
 
   const handleSelectUrl = (url) => {
     setHasError(false);
-    setPageLoading(true);
+    setIsLoading(true);
+    setLoadProgress(0.2);
     setCurrentUrl(url);
     setSettingsVisible(false);
   };
+
+  const isLocalDev = currentUrl.includes('192.168') || currentUrl.includes('localhost');
 
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
         <StatusBar style="light" backgroundColor="#0b0713" />
 
-        {/* Top Mini Control Strip */}
+        {/* Top Control Bar */}
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.headerTitleWrap}
             onPress={() => setSettingsVisible(true)}
           >
             <Text style={styles.headerTitle} numberOfLines={1}>
-              BookmarkChat • <Text style={styles.headerSub}>{currentUrl.replace('https://', '').replace('http://', '').replace('www.', '')}</Text>
+              Bookmark<Text style={{ color: '#ff3b5c' }}>Chat</Text>
             </Text>
+            <View style={[styles.serverPill, isLocalDev ? styles.serverPillDev : styles.serverPillLive]}>
+              <Text style={styles.serverPillText}>
+                {isLocalDev ? '💻 Local Dev' : '🌐 Live'}
+              </Text>
+            </View>
           </TouchableOpacity>
+
           <View style={styles.headerButtons}>
             <TouchableOpacity
               style={styles.headerBtn}
               onPress={() => {
-                setPageLoading(true);
+                setIsLoading(true);
+                setLoadProgress(0.2);
                 setHasError(false);
                 webViewRef.current?.reload();
               }}
@@ -120,15 +141,38 @@ export default function App() {
             >
               <Text style={styles.headerBtnText}>↻</Text>
             </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.headerBtn, styles.headerBtnToggle]}
+              onPress={() => handleSelectUrl(isLocalDev ? DEFAULT_PROD_URL : DEFAULT_LOCAL_URL)}
+              accessibilityLabel="Switch Server"
+            >
+              <Text style={styles.headerBtnText}>
+                {isLocalDev ? 'Switch to Live' : 'Switch to Dev'}
+              </Text>
+            </TouchableOpacity>
+
             <TouchableOpacity
               style={[styles.headerBtn, styles.headerBtnSettings]}
               onPress={() => setSettingsVisible(true)}
-              accessibilityLabel="Switch Server"
+              accessibilityLabel="Server Settings"
             >
-              <Text style={styles.headerBtnText}>⚙ Server</Text>
+              <Text style={styles.headerBtnText}>⚙</Text>
             </TouchableOpacity>
           </View>
         </View>
+
+        {/* Top Slim Loading Progress Bar */}
+        {isLoading && (
+          <View style={styles.progressTrack}>
+            <View
+              style={[
+                styles.progressBar,
+                { width: `${Math.max(15, Math.round(loadProgress * 100))}%` },
+              ]}
+            />
+          </View>
+        )}
 
         {/* Main WebView */}
         <View style={styles.webviewWrapper}>
@@ -137,24 +181,30 @@ export default function App() {
               <Text style={styles.errorTitle}>Cannot connect to server</Text>
               <Text style={styles.errorSub}>{currentUrl}</Text>
               <Text style={styles.errorDesc}>
-                {errorMessage || 'Make sure your dev server is running with: npm run dev -- --host'}
+                {errorMessage || 'Make sure your PC and phone are on the same Wi-Fi and dev server is running.'}
               </Text>
+
               <TouchableOpacity
                 style={styles.actionBtn}
                 onPress={() => {
                   setHasError(false);
-                  setPageLoading(true);
+                  setIsLoading(true);
+                  setLoadProgress(0.2);
                   webViewRef.current?.reload();
                 }}
               >
-                <Text style={styles.actionBtnText}>Retry Connection</Text>
+                <Text style={styles.actionBtnText}>↻ Retry Connection</Text>
               </TouchableOpacity>
+
               <TouchableOpacity
                 style={[styles.actionBtn, styles.switchProdBtn]}
-                onPress={() => handleSelectUrl(DEFAULT_PROD_URL)}
+                onPress={() => handleSelectUrl(isLocalDev ? DEFAULT_PROD_URL : DEFAULT_LOCAL_URL)}
               >
-                <Text style={styles.actionBtnText}>Switch to Live Site (bookmarkchat.online)</Text>
+                <Text style={styles.actionBtnText}>
+                  {isLocalDev ? '🌐 Switch to Live Site' : '💻 Switch to Dev Server'}
+                </Text>
               </TouchableOpacity>
+
               <TouchableOpacity
                 style={[styles.actionBtn, styles.editSettingsBtn]}
                 onPress={() => setSettingsVisible(true)}
@@ -179,34 +229,36 @@ export default function App() {
               javaScriptCanOpenWindowsAutomatically={true}
               injectedJavaScript={INJECTED_DEBUG_JS}
               onNavigationStateChange={(navState) => setCanGoBack(navState.canGoBack)}
-              onLoadStart={() => setPageLoading(true)}
-              onLoadEnd={() => setPageLoading(false)}
+              onLoadStart={() => {
+                setIsLoading(true);
+                setLoadProgress(0.2);
+              }}
+              onLoadProgress={({ nativeEvent }) => {
+                setLoadProgress(nativeEvent.progress);
+                if (nativeEvent.progress >= 0.6) {
+                  setIsLoading(false);
+                }
+              }}
+              onLoadEnd={() => {
+                setIsLoading(false);
+                setLoadProgress(1);
+              }}
               onMessage={handleMessage}
               onError={(syntheticEvent) => {
                 const { nativeEvent } = syntheticEvent;
                 setHasError(true);
-                setPageLoading(false);
+                setIsLoading(false);
                 setErrorMessage(nativeEvent.description || 'Connection failed');
               }}
               onHttpError={(syntheticEvent) => {
                 const { nativeEvent } = syntheticEvent;
                 if (nativeEvent.statusCode >= 400) {
                   setHasError(true);
-                  setPageLoading(false);
+                  setIsLoading(false);
                   setErrorMessage(`HTTP Error ${nativeEvent.statusCode}: ${nativeEvent.description}`);
                 }
               }}
             />
-          )}
-
-          {pageLoading && !hasError && (
-            <View style={styles.loadingContainer} pointerEvents="none">
-              <Text style={styles.logoText}>
-                BOOKMARK<Text style={{ color: '#a855f7' }}>CHAT</Text>
-              </Text>
-              <ActivityIndicator size="large" color="#a855f7" style={{ marginTop: 16 }} />
-              <Text style={styles.loadingSub}>Loading application...</Text>
-            </View>
           )}
         </View>
 
@@ -219,25 +271,25 @@ export default function App() {
         >
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Select BookmarkChat Server</Text>
+              <Text style={styles.modalTitle}>Select Server</Text>
               <Text style={styles.modalSub}>
-                Choose between the live production deployment or your local development machine.
+                Switch between your local development machine or the live production deployment.
               </Text>
-
-              <TouchableOpacity
-                style={[styles.presetBtn, currentUrl === DEFAULT_PROD_URL && styles.presetBtnActive]}
-                onPress={() => handleSelectUrl(DEFAULT_PROD_URL)}
-              >
-                <Text style={styles.presetTitle}>🌐 Live Production</Text>
-                <Text style={styles.presetSub}>https://www.bookmarkchat.online</Text>
-              </TouchableOpacity>
 
               <TouchableOpacity
                 style={[styles.presetBtn, currentUrl === DEFAULT_LOCAL_URL && styles.presetBtnActive]}
                 onPress={() => handleSelectUrl(DEFAULT_LOCAL_URL)}
               >
                 <Text style={styles.presetTitle}>💻 Local Dev Server (PC on Wi-Fi)</Text>
-                <Text style={styles.presetSub}>http://192.168.0.9:5173 (Requires 'npm run dev -- --host')</Text>
+                <Text style={styles.presetSub}>{DEFAULT_LOCAL_URL}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.presetBtn, currentUrl === DEFAULT_PROD_URL && styles.presetBtnActive]}
+                onPress={() => handleSelectUrl(DEFAULT_PROD_URL)}
+              >
+                <Text style={styles.presetTitle}>🌐 Live Production</Text>
+                <Text style={styles.presetSub}>{DEFAULT_PROD_URL}</Text>
               </TouchableOpacity>
 
               <View style={styles.customSection}>
@@ -282,218 +334,234 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0b0713',
+    backgroundColor: '#0a0a0c',
   },
   header: {
-    height: 42,
+    height: 44,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 12,
-    backgroundColor: '#120d20',
+    backgroundColor: '#121216',
     borderBottomWidth: 1,
-    borderBottomColor: '#1e1633',
+    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
   },
   headerTitleWrap: {
-    flex: 1,
-    marginRight: 8,
-  },
-  headerTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#a855f7',
-  },
-  headerSub: {
-    fontSize: 11,
-    fontWeight: '400',
-    color: '#8e86a0',
-  },
-  headerButtons: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
+  headerTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#ffffff',
+    letterSpacing: -0.3,
+  },
+  serverPill: {
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 99,
+  },
+  serverPillDev: {
+    backgroundColor: 'rgba(168, 85, 247, 0.2)',
+    borderWidth: 1,
+    borderColor: 'rgba(168, 85, 247, 0.4)',
+  },
+  serverPillLive: {
+    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.4)',
+  },
+  serverPillText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#ffffff',
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   headerBtn: {
-    paddingHorizontal: 10,
+    paddingHorizontal: 9,
     paddingVertical: 5,
-    backgroundColor: '#1c1530',
+    backgroundColor: '#18181d',
     borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  headerBtnToggle: {
+    backgroundColor: '#23232a',
   },
   headerBtnSettings: {
-    backgroundColor: '#7c3aed',
+    paddingHorizontal: 7,
   },
   headerBtnText: {
     color: '#ffffff',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
+  },
+  progressTrack: {
+    height: 3,
+    backgroundColor: 'transparent',
+    width: '100%',
+    overflow: 'hidden',
+  },
+  progressBar: {
+    height: '100%',
+    backgroundColor: '#ff3b5c',
   },
   webviewWrapper: {
     flex: 1,
-    backgroundColor: '#0b0713',
+    backgroundColor: '#0a0a0c',
   },
   webview: {
     flex: 1,
-    backgroundColor: '#0b0713',
-  },
-  loadingContainer: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(11, 7, 19, 0.92)',
-  },
-  logoText: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#ffffff',
-    letterSpacing: -0.5,
-  },
-  loadingSub: {
-    marginTop: 8,
-    color: '#8e86a0',
-    fontSize: 12,
+    backgroundColor: '#0a0a0c',
   },
   errorContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
-    backgroundColor: '#0b0713',
+    backgroundColor: '#0a0a0c',
   },
   errorTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#ef4444',
-    marginBottom: 8,
+    color: '#ffffff',
+    marginBottom: 6,
   },
   errorSub: {
-    fontSize: 13,
-    color: '#9ca3af',
+    fontSize: 12,
+    color: '#a855f7',
     marginBottom: 12,
+    textAlign: 'center',
   },
   errorDesc: {
     fontSize: 13,
-    color: '#d1d5db',
+    color: '#8e86a0',
     textAlign: 'center',
     marginBottom: 24,
     lineHeight: 18,
   },
   actionBtn: {
-    backgroundColor: '#a855f7',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
     width: '100%',
+    maxWidth: 280,
+    paddingVertical: 12,
+    backgroundColor: '#ff3b5c',
+    borderRadius: 8,
     alignItems: 'center',
     marginBottom: 10,
   },
-  switchProdBtn: {
-    backgroundColor: '#3b82f6',
-  },
   actionBtnText: {
     color: '#ffffff',
-    fontWeight: '600',
     fontSize: 14,
+    fontWeight: '700',
+  },
+  switchProdBtn: {
+    backgroundColor: '#23232a',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
   },
   editSettingsBtn: {
     backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: '#374151',
-    marginTop: 6,
   },
   editSettingsText: {
-    color: '#9ca3af',
+    color: '#a1a1aa',
     fontSize: 13,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
     justifyContent: 'center',
+    alignItems: 'center',
     padding: 20,
   },
   modalContent: {
     width: '100%',
-    backgroundColor: '#161026',
+    maxWidth: 360,
+    backgroundColor: '#18181d',
     borderRadius: 16,
-    padding: 20,
+    padding: 24,
     borderWidth: 1,
-    borderColor: '#2e234c',
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   modalTitle: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '700',
     color: '#ffffff',
     marginBottom: 6,
   },
   modalSub: {
     fontSize: 12,
-    color: '#9a91b2',
-    marginBottom: 16,
+    color: '#8e86a0',
+    marginBottom: 18,
     lineHeight: 16,
   },
   presetBtn: {
-    padding: 12,
-    backgroundColor: '#1f1638',
+    padding: 14,
+    backgroundColor: '#23232a',
     borderRadius: 10,
-    marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#2f2355',
+    borderColor: 'transparent',
+    marginBottom: 10,
   },
   presetBtnActive: {
-    borderColor: '#a855f7',
-    backgroundColor: '#2b1b52',
+    borderColor: '#ff3b5c',
+    backgroundColor: 'rgba(255, 59, 92, 0.12)',
   },
   presetTitle: {
-    color: '#ffffff',
     fontSize: 14,
     fontWeight: '600',
+    color: '#ffffff',
     marginBottom: 2,
   },
   presetSub: {
-    color: '#9a91b2',
     fontSize: 11,
+    color: '#8e86a0',
   },
   customSection: {
-    marginTop: 8,
-    marginBottom: 16,
+    marginTop: 12,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.08)',
   },
   customLabel: {
-    color: '#cfc6e8',
     fontSize: 12,
-    marginBottom: 6,
-  },
-  customInput: {
-    backgroundColor: '#0e091b',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#34265c',
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    color: '#ffffff',
-    fontSize: 13,
+    color: '#8e86a0',
     marginBottom: 8,
   },
+  customInput: {
+    height: 42,
+    backgroundColor: '#121216',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    color: '#ffffff',
+    fontSize: 13,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    marginBottom: 10,
+  },
   connectBtn: {
-    backgroundColor: '#7c3aed',
-    paddingVertical: 10,
+    height: 38,
+    backgroundColor: '#ff3b5c',
     borderRadius: 8,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   connectBtnText: {
     color: '#ffffff',
-    fontWeight: '600',
     fontSize: 13,
+    fontWeight: '600',
   },
   closeBtn: {
+    marginTop: 14,
     paddingVertical: 10,
     alignItems: 'center',
   },
   closeBtnText: {
-    color: '#8c82a5',
+    color: '#8e86a0',
     fontSize: 13,
   },
 });
